@@ -8,6 +8,10 @@ const manifestPath = join(stagingDir, "manifest.json");
 const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
 const macosManifest = structuredClone(manifest);
 const iosManifest = structuredClone(manifest);
+// The public key fixes Chrome's unpacked extension ID but is not part of the
+// Safari package identity, which is controlled by Apple code signing.
+delete macosManifest.key;
+delete iosManifest.key;
 iosManifest.permissions = (iosManifest.permissions ?? []).filter((permission) => permission !== "webRequest");
 delete iosManifest.background.type;
 iosManifest.background.service_worker = "src/background.js";

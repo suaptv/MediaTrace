@@ -60,6 +60,12 @@ if [ -f "$GENERATED_PEM" ]; then
   chmod 600 "$KEY_PATH"
 fi
 
+# Give unpacked and CRX installations the same stable extension ID. Chrome
+# derives an unpacked ID from manifest.key and a packed ID from this PEM; both
+# values refer to the same public key after synchronization.
+EXTENSION_ID=$(node "$PROJECT_DIR/scripts/sync-chrome-extension-id.mjs" "$PROJECT_DIR/manifest.json" "$KEY_PATH")
+
 echo "Chrome CRX: $OUTPUT_DIR/$PACKAGE_NAME.crx"
 echo "Private key: $KEY_PATH"
+echo "Extension ID: $EXTENSION_ID"
 echo "Keep the PEM private; future builds reuse it to preserve the extension ID."

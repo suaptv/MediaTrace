@@ -64,17 +64,35 @@ if [ ! -f "$KEY_PATH" ]; then
   exit 1
 fi
 
-EXTENSION_ID=$(openssl rsa -in "$KEY_PATH" -pubout -outform DER 2>/dev/null | openssl dgst -sha256 -binary | xxd -p -c 256 | cut -c 1-32 | tr '0123456789abcdef' 'abcdefghijklmnop')
+# Write the PEM public key into manifest.json so Chrome assigns the same ID to
+# both the unpacked folder and the CRX package.
+EXTENSION_ID=$(node "$PROJECT_DIR/scripts/sync-chrome-extension-id.mjs" "$PROJECT_DIR/manifest.json" "$KEY_PATH")
 if [ ${#EXTENSION_ID} -ne 32 ]; then
   echo "Error: failed to derive the Chrome extension ID." >&2
   exit 1
 fi
 
-# Chrome assigns a different ID when this project is loaded unpacked because
-# the source manifest intentionally has no embedded public key. Add every
-# currently installed unpacked ID whose path resolves to this project, while
-# always retaining the stable PEM/CRX ID.
+# Retain IDs from older unpacked installations during migration. A caller may
+# also provide a currently visible Chrome ID when Chrome has not flushed its
+# profile Preferences file yet.
 ALLOWED_ORIGINS="\"chrome-extension://$EXTENSION_ID/\""
+EXTRA_EXTENSION_IDS=${MEDIATRACE_CHROME_EXTENSION_IDS:-${MEDIATRACE_CHROME_EXTENSION_ID:-}}
+for EXTRA_ID in $(printf '%s' "$EXTRA_EXTENSION_IDS" | tr ',' ' '); do
+  case "$EXTRA_ID" in
+    *[!a-p]*)
+      echo "Error: invalid Chrome extension ID: $EXTRA_ID" >&2
+      exit 1
+      ;;
+  esac
+  if [ ${#EXTRA_ID} -ne 32 ]; then
+    echo "Error: invalid Chrome extension ID: $EXTRA_ID" >&2
+    exit 1
+  fi
+  case "$ALLOWED_ORIGINS" in
+    *"chrome-extension://$EXTRA_ID/"*) ;;
+    *) ALLOWED_ORIGINS="$ALLOWED_ORIGINS, \"chrome-extension://$EXTRA_ID/\"" ;;
+  esac
+done
 CHROME_DATA_DIR="$HOME/Library/Application Support/Google/Chrome"
 for PREFERENCES_PATH in "$CHROME_DATA_DIR"/*/Preferences "$CHROME_DATA_DIR"/*/"Secure Preferences"; do
   [ -f "$PREFERENCES_PATH" ] || continue
@@ -89,7 +107,7 @@ for PREFERENCES_PATH in "$CHROME_DATA_DIR"/*/Preferences "$CHROME_DATA_DIR"/*/"S
         if (fs.realpathSync(path.resolve(setting.path)) === project) process.stdout.write(`${id}\n`);
       } catch {}
     }
-  ' "$PREFERENCES_PATH" "$PROJECT_DIR")
+  ' "$PREFERENCES_PATH" "$PROJECT_DIR" || true)
   for UNPACKED_ID in $UNPACKED_IDS; do
     case "$ALLOWED_ORIGINS" in
       *"chrome-extension://$UNPACKED_ID/"*) ;;

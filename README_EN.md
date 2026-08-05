@@ -114,12 +114,20 @@ After confirmation, the script synchronizes `src/background.js` and `native-host
 The build and installer commands automatically:
 
 - Generate or reuse `dist/chrome/mediatrace.pem` to preserve the Chrome extension ID;
+- Write the PEM public key to `manifest.json`, giving unpacked and CRX installations the same extension ID;
 - Compile the Swift SSDP native service;
 - Sign the native service with macOS `codesign`;
 - Register the Native Messaging Host;
 - Add both the CRX ID and the current unpacked-extension ID to the allowlist.
 
 Quit Chrome completely with `Command + Q`, then reopen it.
+
+If Chrome has not yet flushed the current profile configuration to disk, pass the extension ID shown on `chrome://extensions` directly to the installer instead of editing JSON manually:
+
+```bash
+MEDIATRACE_CHROME_EXTENSION_ID=your-32-character-extension-id \
+  ./scripts/install-chrome-native-host.sh
+```
 
 To verify Chrome's registration:
 

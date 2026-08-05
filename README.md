@@ -114,12 +114,20 @@ MEDIATRACE_CODESIGN_IDENTITY="Developer ID Application: Example Name (TEAMID)" \
 这两个命令会自动完成：
 
 - 生成或复用 `dist/chrome/mediatrace.pem`，保持 Chrome 扩展 ID 稳定；
+- 将 PEM 对应的公钥写入 `manifest.json`，使文件夹加载与 CRX 使用相同的扩展 ID；
 - 编译 Swift SSDP 本地服务；
 - 使用 macOS `codesign` 为本地服务签名；
 - 注册 `app.mediatrace.native` Native Messaging Host；
 - 自动把 CRX ID 和当前“文件夹加载”的扩展 ID 加入白名单。
 
 安装完成后，用 `Command + Q` 完全退出 Chrome，再重新打开。
+
+如果 Chrome 尚未把当前配置写入磁盘，也可以把工具栏页面显示的扩展 ID 明确交给安装脚本，无需修改 JSON：
+
+```bash
+MEDIATRACE_CHROME_EXTENSION_ID=你的32位扩展ID \
+  ./scripts/install-chrome-native-host.sh
+```
 
 可以检查 Chrome 是否已经找到注册文件：
 

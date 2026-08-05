@@ -27,6 +27,12 @@ node -e '
   const source = fs.readFileSync(file, "utf8");
   fs.writeFileSync(file, source.replace(/const NATIVE_APP_ID = "[^"]+";/, "const NATIVE_APP_ID = \"app.mediatrace\";"));
 ' "$PROJECT_DIR/src/background.js"
+node -e '
+  const fs = require("fs"), file = process.argv[1];
+  const manifest = JSON.parse(fs.readFileSync(file, "utf8"));
+  delete manifest.key;
+  fs.writeFileSync(file, `${JSON.stringify(manifest, null, 2)}\n`);
+' "$PROJECT_DIR/manifest.json"
 
 rm -f "$PROJECT_DIR/dist/chrome/mediatrace.pem" "$PROJECT_DIR/dist/chrome/mediatrace.crx"
 rm -rf "$PROJECT_DIR/safari-project/MediaTrace/MediaTrace.xcodeproj/xcuserdata" \
