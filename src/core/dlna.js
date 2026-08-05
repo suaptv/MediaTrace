@@ -96,6 +96,31 @@ export function buildPlayEnvelope() {
     `</u:Play></s:Body></s:Envelope>`;
 }
 
+export function formatDlnaTime(seconds) {
+  const total = Math.max(0, Math.floor(Number(seconds) || 0));
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const remainder = total % 60;
+  return [hours, minutes, remainder].map((value) => String(value).padStart(2, "0")).join(":");
+}
+
+export function buildSeekEnvelope(seconds) {
+  return `<?xml version="1.0" encoding="utf-8"?><s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" ` +
+    `s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body>` +
+    `<u:Seek xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID>` +
+    `<Unit>REL_TIME</Unit><Target>${formatDlnaTime(seconds)}</Target></u:Seek></s:Body></s:Envelope>`;
+}
+
+export async function seekOverHttp(device, seconds) {
+  if (!device?.controlURL) throw new Error("设备缺少 AVTransport 控制地址");
+  const response = await fetch(device.controlURL, {
+    method: "POST",
+    headers: { "Content-Type": 'text/xml; charset="utf-8"', SOAPACTION: '"urn:schemas-upnp-org:service:AVTransport:1#Seek"' },
+    body: buildSeekEnvelope(seconds)
+  });
+  if (!response.ok) throw new Error(`DLNA Seek 失败（HTTP ${response.status}）`);
+}
+
 export async function castOverHttp(device, item, headers = {}) {
   if (!device?.controlURL) throw new Error("设备缺少 AVTransport 控制地址");
   const request = async (action, body) => {

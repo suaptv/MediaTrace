@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildDidlLite, buildSetUriEnvelope, normalizeHeaders, parseDlnaDescription, playbackHeadersForPage } from "../src/core/dlna.js";
+import { buildDidlLite, buildSeekEnvelope, buildSetUriEnvelope, formatDlnaTime, normalizeHeaders, parseDlnaDescription, playbackHeadersForPage } from "../src/core/dlna.js";
 
 test("embeds receiver-specific HTTP headers in DIDL-Lite", () => {
   const xml = buildDidlLite({ url: "https://cdn.test/v.m3u8?a=1&b=2", kind: "m3u8", domain: "cdn.test" }, {
@@ -21,6 +21,12 @@ test("escapes nested DIDL metadata in SOAP envelope", () => {
 test("places a paired audio track beside CurrentURI", () => {
   const xml = buildSetUriEnvelope({ url: "https://cdn.test/video.m4s?a=1&b=2", audioUrl: "https://cdn.test/audio.m4s?a=3&b=4", kind: "m4s" }, {});
   assert.match(xml, /<CurrentURI>https:\/\/cdn\.test\/video\.m4s\?a=1&amp;b=2<\/CurrentURI><CurrentAudioURI>https:\/\/cdn\.test\/audio\.m4s\?a=3&amp;b=4<\/CurrentAudioURI>/);
+});
+
+test("builds a DLNA relative-time seek request", () => {
+  assert.equal(formatDlnaTime(3723.9), "01:02:03");
+  const xml = buildSeekEnvelope(3723.9);
+  assert.match(xml, /<Unit>REL_TIME<\/Unit><Target>01:02:03<\/Target>/);
 });
 
 test("only forwards playback-relevant headers", () => {

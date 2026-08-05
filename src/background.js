@@ -1,5 +1,5 @@
 import { classifyUrl, getFlvInfo, getM3u8Info, getMp4Duration, inferM4sTrack, inferTencentM3u8, inferYouTubeTrack, isTencentIndexedSegment, isTencentSvpSegment, mediaRootKey, segmentEndSeconds, streamGroupKey, tencentVideoGroupKey, youkuPlaylistGroupKey, youkuVideoId } from "./core/media.js";
-import { castOverHttp, normalizeHeaders, parseDlnaDescription, playbackHeadersForPage } from "./core/dlna.js";
+import { castOverHttp, normalizeHeaders, parseDlnaDescription, playbackHeadersForPage, seekOverHttp } from "./core/dlna.js";
 
 const api = globalThis.browser ?? globalThis.chrome;
 const actionApi = api.action ?? api.browserAction;
@@ -20,6 +20,7 @@ const autoCastDeviceByTab = new Map();
 const autoCastPendingTabs = new Set();
 const autoCastTimers = new Map();
 const autoCastInFlightTabs = new Set();
+const dlnaSeekStateByTab = new Map();
 const hydratedTabs = new Set();
 const tabOperationQueues = new Map();
 const NATIVE_APP_ID = "app.mediatrace";
@@ -234,6 +235,7 @@ function resetTab(tabId) {
   hlsChildPlaylistsByTab.delete(tabId);
   clearPendingM4s(tabId);
   bilibiliDashMetadataByTab.delete(tabId);
+  dlnaSeekStateByTab.delete(tabId);
   updateTabBadge(tabId);
 }
 
@@ -623,8 +625,31 @@ async function getDlnaPosition(tabId) {
   if (!session?.deviceId || session.pageUrl !== (pageUrlByTab.get(tabId) ?? "")) return { active: false };
   const device = settings.dlnaDevices.find((candidate) => candidate.id === session.deviceId);
   if (!device) return { active: false };
+  const pendingSeek = dlnaSeekStateByTab.get(tabId);
+  if (pendingSeek && Date.now() - pendingSeek.sentAt < 2500) {
+    return { active: true, position: pendingSeek.position, seeking: true };
+  }
+  if (pendingSeek) dlnaSeekStateByTab.delete(tabId);
   const response = await nativeDlna({ action: "position", device });
   return { active: true, ...(response.positionInfo ?? {}) };
+}
+
+async function seekDlna(tabId, rawPosition) {
+  const position = Number(rawPosition);
+  if (!Number.isFinite(position) || position < 0) throw new Error("快进时间无效");
+  const settings = await getDlnaSettings();
+  const session = settings.dlnaAutoCastSessions?.[String(tabId)];
+  if (!session?.deviceId || session.pageUrl !== (pageUrlByTab.get(tabId) ?? "")) return { active: false };
+  const device = settings.dlnaDevices.find((candidate) => candidate.id === session.deviceId);
+  if (!device) return { active: false };
+  dlnaSeekStateByTab.set(tabId, { position, sentAt: Date.now() });
+  try { await nativeDlna({ action: "seek", device, position }); }
+  catch (error) {
+    if (!device.manual) { dlnaSeekStateByTab.delete(tabId); throw error; }
+    try { await seekOverHttp(device, position); }
+    catch { dlnaSeekStateByTab.delete(tabId); throw error; }
+  }
+  return { active: true, position };
 }
 
 api.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -712,6 +737,10 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message?.type === "GET_DLNA_POSITION") {
     const tabId = sender.tab?.id ?? message.tabId;
     getDlnaPosition(tabId).then(sendResponse, (error) => sendResponse({ active: false, error: error.message })); return true;
+  }
+  if (message?.type === "SEEK_DLNA") {
+    const tabId = sender.tab?.id ?? message.tabId;
+    seekDlna(tabId, message.position).then(sendResponse, (error) => sendResponse({ active: false, error: error.message })); return true;
   }
   if (message?.type === "DISCOVER_DLNA") {
     discoverDlna().then(sendResponse, (error) => sendResponse({ error: error.message })); return true;

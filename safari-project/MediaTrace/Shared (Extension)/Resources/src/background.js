@@ -466,6 +466,31 @@ function buildPlayEnvelope() {
     `</u:Play></s:Body></s:Envelope>`;
 }
 
+function formatDlnaTime(seconds) {
+  const total = Math.max(0, Math.floor(Number(seconds) || 0));
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const remainder = total % 60;
+  return [hours, minutes, remainder].map((value) => String(value).padStart(2, "0")).join(":");
+}
+
+function buildSeekEnvelope(seconds) {
+  return `<?xml version="1.0" encoding="utf-8"?><s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" ` +
+    `s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body>` +
+    `<u:Seek xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID>` +
+    `<Unit>REL_TIME</Unit><Target>${formatDlnaTime(seconds)}</Target></u:Seek></s:Body></s:Envelope>`;
+}
+
+async function seekOverHttp(device, seconds) {
+  if (!device?.controlURL) throw new Error("设备缺少 AVTransport 控制地址");
+  const response = await fetch(device.controlURL, {
+    method: "POST",
+    headers: { "Content-Type": 'text/xml; charset="utf-8"', SOAPACTION: '"urn:schemas-upnp-org:service:AVTransport:1#Seek"' },
+    body: buildSeekEnvelope(seconds)
+  });
+  if (!response.ok) throw new Error(`DLNA Seek 失败（HTTP ${response.status}）`);
+}
+
 async function castOverHttp(device, item, headers = {}) {
   if (!device?.controlURL) throw new Error("设备缺少 AVTransport 控制地址");
   const request = async (action, body) => {
@@ -499,6 +524,7 @@ const autoCastDeviceByTab = new Map();
 const autoCastPendingTabs = new Set();
 const autoCastTimers = new Map();
 const autoCastInFlightTabs = new Set();
+const dlnaSeekStateByTab = new Map();
 const hydratedTabs = new Set();
 const tabOperationQueues = new Map();
 const NATIVE_APP_ID = "app.mediatrace";
@@ -713,6 +739,7 @@ function resetTab(tabId) {
   hlsChildPlaylistsByTab.delete(tabId);
   clearPendingM4s(tabId);
   bilibiliDashMetadataByTab.delete(tabId);
+  dlnaSeekStateByTab.delete(tabId);
   updateTabBadge(tabId);
 }
 
@@ -1102,8 +1129,31 @@ async function getDlnaPosition(tabId) {
   if (!session?.deviceId || session.pageUrl !== (pageUrlByTab.get(tabId) ?? "")) return { active: false };
   const device = settings.dlnaDevices.find((candidate) => candidate.id === session.deviceId);
   if (!device) return { active: false };
+  const pendingSeek = dlnaSeekStateByTab.get(tabId);
+  if (pendingSeek && Date.now() - pendingSeek.sentAt < 2500) {
+    return { active: true, position: pendingSeek.position, seeking: true };
+  }
+  if (pendingSeek) dlnaSeekStateByTab.delete(tabId);
   const response = await nativeDlna({ action: "position", device });
   return { active: true, ...(response.positionInfo ?? {}) };
+}
+
+async function seekDlna(tabId, rawPosition) {
+  const position = Number(rawPosition);
+  if (!Number.isFinite(position) || position < 0) throw new Error("快进时间无效");
+  const settings = await getDlnaSettings();
+  const session = settings.dlnaAutoCastSessions?.[String(tabId)];
+  if (!session?.deviceId || session.pageUrl !== (pageUrlByTab.get(tabId) ?? "")) return { active: false };
+  const device = settings.dlnaDevices.find((candidate) => candidate.id === session.deviceId);
+  if (!device) return { active: false };
+  dlnaSeekStateByTab.set(tabId, { position, sentAt: Date.now() });
+  try { await nativeDlna({ action: "seek", device, position }); }
+  catch (error) {
+    if (!device.manual) { dlnaSeekStateByTab.delete(tabId); throw error; }
+    try { await seekOverHttp(device, position); }
+    catch { dlnaSeekStateByTab.delete(tabId); throw error; }
+  }
+  return { active: true, position };
 }
 
 api.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -1191,6 +1241,10 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message?.type === "GET_DLNA_POSITION") {
     const tabId = sender.tab?.id ?? message.tabId;
     getDlnaPosition(tabId).then(sendResponse, (error) => sendResponse({ active: false, error: error.message })); return true;
+  }
+  if (message?.type === "SEEK_DLNA") {
+    const tabId = sender.tab?.id ?? message.tabId;
+    seekDlna(tabId, message.position).then(sendResponse, (error) => sendResponse({ active: false, error: error.message })); return true;
   }
   if (message?.type === "DISCOVER_DLNA") {
     discoverDlna().then(sendResponse, (error) => sendResponse({ error: error.message })); return true;

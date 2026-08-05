@@ -386,6 +386,16 @@ private final class DLNAService {
                 "duration": clockSeconds(xmlValue(xml, "TrackDuration"))]
     }
 
+    func seek(device: [String: Any], position: Double) throws {
+        guard let raw = device["controlURL"] as? String, let url = URL(string: raw) else {
+            throw DLNAError.message("设备缺少 AVTransport 控制地址")
+        }
+        let total = max(0, Int(position.rounded(.down)))
+        let target = String(format: "%02d:%02d:%02d", total / 3600, (total % 3600) / 60, total % 60)
+        let content = "<u:Seek xmlns:u=\"urn:schemas-upnp-org:service:AVTransport:1\"><InstanceID>0</InstanceID><Unit>REL_TIME</Unit><Target>\(target)</Target></u:Seek>"
+        _ = try soapData(url, action: "Seek", body: envelope(content))
+    }
+
     private func xmlValue(_ xml: String, _ tag: String) -> String {
         guard let start = xml.range(of: "<\(tag)>", options: .caseInsensitive),
               let end = xml.range(of: "</\(tag)>", options: .caseInsensitive, range: start.upperBound..<xml.endIndex) else { return "" }
@@ -493,6 +503,9 @@ final class SafariWebExtensionHandler: NSObject, NSExtensionRequestHandling {
                     payload = ["ok": true]
                 case "position":
                     payload = ["ok": true, "positionInfo": try DLNAService.shared.position(device: stringDictionary(message["device"]))]
+                case "seek":
+                    try DLNAService.shared.seek(device: stringDictionary(message["device"]), position: (message["position"] as? NSNumber)?.doubleValue ?? 0)
+                    payload = ["ok": true]
                 default: throw DLNAError.message("未知的 DLNA 操作")
                 }
             } catch {

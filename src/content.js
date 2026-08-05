@@ -2,6 +2,8 @@
   const api = globalThis.browser ?? globalThis.chrome;
   const seen = new Set();
   let dashScanTimer;
+  const remoteSeekUntil = new WeakMap();
+  const webSeekTimers = new WeakMap();
 
   function m4sFileKey(rawUrl) {
     try { return decodeURIComponent(new URL(rawUrl, location.href).pathname.split("/").pop() ?? "").toLowerCase(); } catch { return ""; }
@@ -136,10 +138,27 @@
         const video = videos.sort((a, b) => (b.clientWidth * b.clientHeight) - (a.clientWidth * a.clientHeight))[0];
         if (!video || Math.abs(video.currentTime - position) < 2) return;
         const target = Math.min(position, Math.max(0, video.duration - 0.05));
-        try { video.currentTime = target; } catch { return; }
+        remoteSeekUntil.set(video, { position: target, until: Date.now() + 1800 });
+        try { video.currentTime = target; } catch { remoteSeekUntil.delete(video); return; }
         video.dispatchEvent(new CustomEvent("mediatrace-dlna-position", { detail: { position, duration: Number(state.duration) || null } }));
       }).catch(() => {});
     } catch { /* extension context may have been invalidated */ }
+  }
+  function forwardWebSeek(event) {
+    const video = event.target;
+    if (!(video instanceof HTMLVideoElement) || window !== top || document.visibilityState !== "visible") return;
+    const remote = remoteSeekUntil.get(video);
+    if (remote && Date.now() < remote.until && Math.abs(video.currentTime - remote.position) < 2) return;
+    if (remote && Date.now() >= remote.until) remoteSeekUntil.delete(video);
+    clearTimeout(webSeekTimers.get(video));
+    webSeekTimers.set(video, setTimeout(() => {
+      const position = Number(video.currentTime);
+      if (!Number.isFinite(position) || position < 0) return;
+      try {
+        const pending = api.runtime.sendMessage({ type: "SEEK_DLNA", position });
+        if (pending?.catch) pending.catch(() => {});
+      } catch { /* extension context may have been invalidated */ }
+    }, 180));
   }
   api.runtime.onMessage.addListener((message) => {
     if (message?.type === "SCAN_PAGE") { scan(); return Promise.resolve({ ok: true }); }
@@ -157,6 +176,7 @@
   observeTraffic();
   scheduleBilibiliDashScan();
   setInterval(syncDlnaPosition, 4000);
+  document.addEventListener("seeked", forwardWebSeek, true);
   addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") syncDlnaPosition(); });
   document.addEventListener("DOMContentLoaded", () => { scan(); scheduleBilibiliDashScan(); }, { once: true });
 })();
