@@ -15,6 +15,28 @@ const airplayHelper = document.querySelector("#airplay-helper");
 const airplayHelperList = document.querySelector("#airplay-helper-list");
 let tabId;
 let refreshTimer;
+
+async function readDetectionPreference() {
+  const fallback = { detectionPreference: null, detectionEnabled: null };
+  const local = await api.storage.local.get(fallback).catch(() => fallback);
+  const synced = api.storage.sync
+    ? await api.storage.sync.get(fallback).catch(() => fallback)
+    : fallback;
+  const candidates = [local.detectionPreference, synced.detectionPreference]
+    .filter((value) => value && typeof value.enabled === "boolean")
+    .sort((a, b) => Number(b.updatedAt || 0) - Number(a.updatedAt || 0));
+  if (candidates.length) return Boolean(candidates[0].enabled);
+  if (typeof local.detectionEnabled === "boolean") return local.detectionEnabled;
+  if (typeof synced.detectionEnabled === "boolean") return synced.detectionEnabled;
+  return false;
+}
+
+async function writeDetectionPreference(value) {
+  const preference = { enabled: Boolean(value), updatedAt: Date.now() };
+  const stored = { detectionEnabled: preference.enabled, detectionPreference: preference };
+  await api.storage.local.set(stored);
+  if (api.storage.sync) await api.storage.sync.set(stored).catch(() => undefined);
+}
 let toastTimer;
 const DEFAULT_DLNA_STATE = { dlnaDevices: [], dlnaRememberDevice: true, dlnaSelectedDeviceId: null, dlnaConnectedDeviceIds: [], dlnaAutoCastNext: false,
   castDeviceType: "dlna", airplayDevices: [], airplaySelectedDeviceId: null };
@@ -168,8 +190,7 @@ async function load() {
   clearTimeout(refreshTimer);
   const [tab] = await api.tabs.query({ active: true, currentWindow: true });
   tabId = tab?.id;
-  const storedState = await api.storage.local.get({ detectionEnabled: false });
-  const detectionEnabled = Boolean(storedState?.detectionEnabled);
+  const detectionEnabled = await readDetectionPreference();
   enabledInput.checked = detectionEnabled;
   if (!detectionEnabled) {
     summary.textContent = "检测功能已关闭";
@@ -279,7 +300,7 @@ document.querySelector("#add-device-form").addEventListener("submit", async (eve
 });
 enabledInput.addEventListener("change", async () => {
   enabledInput.disabled = true;
-  await api.storage.local.set({ detectionEnabled: enabledInput.checked });
+  await writeDetectionPreference(enabledInput.checked);
   await api.runtime.sendMessage({ type: "SET_ENABLED", enabled: enabledInput.checked, tabId }).catch(() => undefined);
   enabledInput.disabled = false; await load();
 });

@@ -509,6 +509,29 @@ const METADATA_TIMEOUT_MS = 6000;
 const M4S_CLASSIFY_DELAY_MS = 250;
 let enabled = false;
 
+async function readDetectionPreference() {
+  const fallback = { detectionPreference: null, detectionEnabled: null };
+  const local = await api.storage.local.get(fallback).catch(() => fallback);
+  const synced = api.storage.sync
+    ? await api.storage.sync.get(fallback).catch(() => fallback)
+    : fallback;
+  const candidates = [local.detectionPreference, synced.detectionPreference]
+    .filter((value) => value && typeof value.enabled === "boolean")
+    .sort((a, b) => Number(b.updatedAt || 0) - Number(a.updatedAt || 0));
+  if (candidates.length) return Boolean(candidates[0].enabled);
+  if (typeof local.detectionEnabled === "boolean") return local.detectionEnabled;
+  if (typeof synced.detectionEnabled === "boolean") return synced.detectionEnabled;
+  return false;
+}
+
+async function writeDetectionPreference(value) {
+  const preference = { enabled: Boolean(value), updatedAt: Date.now() };
+  const stored = { detectionEnabled: preference.enabled, detectionPreference: preference };
+  await api.storage.local.set(stored);
+  if (api.storage.sync) await api.storage.sync.set(stored).catch(() => undefined);
+  return preference.enabled;
+}
+
 function createId() {
   if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
   const bytes = crypto.getRandomValues(new Uint8Array(16));
@@ -518,8 +541,8 @@ function createId() {
   return `${hex.slice(0, 4).join("")}-${hex.slice(4, 6).join("")}-${hex.slice(6, 8).join("")}-${hex.slice(8, 10).join("")}-${hex.slice(10).join("")}`;
 }
 
-api.storage.local.get({ detectionEnabled: false }).then((value) => {
-  enabled = Boolean(value.detectionEnabled);
+readDetectionPreference().then((value) => {
+  enabled = value;
   updateBadge();
 });
 
@@ -1122,8 +1145,7 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const tabId = sender.tab?.id ?? message.tabId;
     if (tabId == null || tabId < 0) { sendResponse({ ok: false }); return false; }
     enqueueTabOperation(tabId, async () => {
-      const state = await api.storage.local.get({ detectionEnabled: false });
-      enabled = Boolean(state.detectionEnabled);
+      enabled = await readDetectionPreference();
       if (!enabled) return;
       await hydrateTab(tabId);
       addCandidate(tabId, message.url, message.contentType, message.source ?? "dom");
@@ -1133,8 +1155,7 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
   if (message?.type === "GET_MEDIA") {
     enqueueTabOperation(message.tabId, async () => {
-      const state = await api.storage.local.get({ detectionEnabled: false });
-      enabled = Boolean(state.detectionEnabled);
+      enabled = await readDetectionPreference();
       if (!enabled) return { items: [], enabled };
       await hydrateTab(message.tabId);
       const items = [...storeFor(message.tabId).values()].sort((a, b) => b.detectedAt - a.detectedAt);
@@ -1150,7 +1171,7 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
   if (message?.type === "SET_ENABLED") {
     enabled = Boolean(message.enabled);
-    api.storage.local.set({ detectionEnabled: enabled }).then(async () => {
+    writeDetectionPreference(enabled).then(async () => {
       updateBadge();
       if (!enabled) { resetAllTabs(); await api.storage.local.set({ dlnaAutoCastSessions: {} }); }
       if (message.tabId != null) updateTabBadge(message.tabId);
