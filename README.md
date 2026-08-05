@@ -4,6 +4,8 @@
 
 <h1 align="center">MediaTrace</h1>
 
+<p align="center"><strong>简体中文</strong> · <a href="README_EN.md">English</a></p>
+
 <p align="center">
   在 Safari 与 Chrome 中发现当前网页的视频地址，并投屏到局域网 DLNA 设备。
 </p>

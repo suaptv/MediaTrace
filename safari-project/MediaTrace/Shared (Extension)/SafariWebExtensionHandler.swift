@@ -124,30 +124,80 @@ private final class AirPlayDiscovery: NSObject, NetServiceBrowserDelegate, NetSe
     }
 }
 
+private final class LimitedDataReceiver: NSObject, URLSessionDataDelegate {
+    let semaphore = DispatchSemaphore(value: 0)
+    private let maxBytes: Int
+    private var data = Data()
+    private var partial = false
+    private var finished = false
+    private(set) var result: Result<(Data, Bool), Error> = .failure(DLNAError.message("媒体元数据没有响应"))
+
+    init(maxBytes: Int) { self.maxBytes = maxBytes }
+
+    private func finish(_ value: Result<(Data, Bool), Error>) {
+        guard !finished else { return }
+        finished = true
+        result = value
+        semaphore.signal()
+    }
+
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse,
+                    completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
+        guard let response = response as? HTTPURLResponse else {
+            finish(.failure(DLNAError.message("媒体元数据响应无效")))
+            completionHandler(.cancel)
+            return
+        }
+        guard (200..<300).contains(response.statusCode) else {
+            finish(.failure(DLNAError.message("HTTP \(response.statusCode)")))
+            completionHandler(.cancel)
+            return
+        }
+        partial = response.statusCode == 206
+        completionHandler(.allow)
+    }
+
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive chunk: Data) {
+        guard !finished else { return }
+        let remaining = maxBytes - data.count
+        if remaining > 0 { data.append(chunk.prefix(remaining)) }
+        if data.count >= maxBytes {
+            // A live FLV response may never finish and some CDNs ignore Range.
+            // Stop immediately after the requested header bytes are available.
+            finish(.success((data, partial)))
+            dataTask.cancel()
+        }
+    }
+
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        guard !finished else { return }
+        if let error, data.isEmpty { finish(.failure(error)) }
+        else { finish(.success((data, partial))) }
+    }
+}
+
 private final class DLNAService {
     static let shared = DLNAService()
 
     func fetchBytes(rawURL: String, range: String, headers: [String: Any], maxBytes: Int) throws -> [String: Any] {
         guard let url = URL(string: rawURL) else { throw DLNAError.message("媒体地址无效") }
         var request = URLRequest(url: url); request.cachePolicy = .reloadIgnoringLocalCacheData
+        request.timeoutInterval = 4
         request.setValue(range, forHTTPHeaderField: "Range")
         let allowed = Set(["referer", "origin", "user-agent", "cookie", "authorization"])
         for (name, rawValue) in headers {
             if allowed.contains(name.lowercased()), let value = rawValue as? String { request.setValue(value, forHTTPHeaderField: name) }
         }
-        let semaphore = DispatchSemaphore(value: 0)
-        var result: Result<(Data, Bool), Error> = .failure(DLNAError.message("媒体元数据没有响应"))
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            if let error { result = .failure(error) }
-            else if let response = response as? HTTPURLResponse, !(200..<300).contains(response.statusCode) {
-                result = .failure(DLNAError.message("HTTP \(response.statusCode)"))
-            } else if let data, data.count <= maxBytes {
-                result = .success((data, (response as? HTTPURLResponse)?.statusCode == 206))
-            } else { result = .failure(DLNAError.message("媒体元数据超过读取上限")) }
-            semaphore.signal()
-        }.resume()
-        if semaphore.wait(timeout: .now() + 8) == .timedOut { throw DLNAError.message("媒体元数据读取超时") }
-        let (data, partial) = try result.get()
+        let receiver = LimitedDataReceiver(maxBytes: maxBytes)
+        let queue = OperationQueue(); queue.maxConcurrentOperationCount = 1
+        let session = URLSession(configuration: .ephemeral, delegate: receiver, delegateQueue: queue)
+        let task = session.dataTask(with: request); task.resume()
+        if receiver.semaphore.wait(timeout: .now() + 5) == .timedOut {
+            task.cancel(); session.invalidateAndCancel()
+            throw DLNAError.message("媒体头部读取超时")
+        }
+        session.finishTasksAndInvalidate()
+        let (data, partial) = try receiver.result.get()
         return ["base64": data.base64EncodedString(), "partial": partial]
     }
 

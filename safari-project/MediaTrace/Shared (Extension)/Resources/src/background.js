@@ -3,7 +3,9 @@
 const mediatraceIOS = /iPhone|iPad|iPod/.test(navigator.platform) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 globalThis.MEDIATRACE_WEB_REQUEST_ENABLED = !mediatraceIOS;
 const HEAD_BYTES = 1024 * 1024;
-const FLV_HEAD_BYTES = 256 * 1024;
+// FLV onMetaData normally lives in the first script tag. Reading 64 KiB is
+// enough for the header and metadata without keeping a live response open.
+const FLV_HEAD_BYTES = 64 * 1024;
 const MAX_PLAYLIST_DEPTH = 3;
 
 function classifyUrl(rawUrl, contentType = "") {
@@ -499,7 +501,7 @@ const autoCastTimers = new Map();
 const autoCastInFlightTabs = new Set();
 const hydratedTabs = new Set();
 const tabOperationQueues = new Map();
-const NATIVE_APP_ID = "app.mediatrace.native";
+const NATIVE_APP_ID = "app.mediatrace";
 const MAX_ITEMS = 150;
 const METADATA_TIMEOUT_MS = 6000;
 // The HLS manifest normally arrives before its fMP4 fragments. A short grace
@@ -601,7 +603,11 @@ async function hydrateTab(tabId) {
   const key = mediaStorageKey(tabId);
   const saved = (await api.storage.local.get({ [key]: [] }))?.[key];
   const entries = Array.isArray(saved) ? saved.filter((entry) => Array.isArray(entry) && entry.length === 2) : [];
-  byTab.set(tabId, new Map(entries));
+  // Network listeners can capture media before the non-persistent background
+  // has restored this tab. Keep those fresh entries instead of replacing them
+  // with an older (often empty) storage snapshot when the popup opens.
+  const live = byTab.get(tabId);
+  byTab.set(tabId, new Map([...entries, ...(live ? live.entries() : [])]));
   reconcileHlsSegments(tabId);
   hydratedTabs.add(tabId);
   return storeFor(tabId);

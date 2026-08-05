@@ -1,5 +1,7 @@
 const HEAD_BYTES = 1024 * 1024;
-const FLV_HEAD_BYTES = 256 * 1024;
+// FLV onMetaData normally lives in the first script tag. Reading 64 KiB is
+// enough for the header and metadata without keeping a live response open.
+const FLV_HEAD_BYTES = 64 * 1024;
 const MAX_PLAYLIST_DEPTH = 3;
 
 export function classifyUrl(rawUrl, contentType = "") {

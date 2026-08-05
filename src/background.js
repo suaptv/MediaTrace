@@ -124,7 +124,11 @@ async function hydrateTab(tabId) {
   const key = mediaStorageKey(tabId);
   const saved = (await api.storage.local.get({ [key]: [] }))?.[key];
   const entries = Array.isArray(saved) ? saved.filter((entry) => Array.isArray(entry) && entry.length === 2) : [];
-  byTab.set(tabId, new Map(entries));
+  // Network listeners can capture media before the non-persistent background
+  // has restored this tab. Keep those fresh entries instead of replacing them
+  // with an older (often empty) storage snapshot when the popup opens.
+  const live = byTab.get(tabId);
+  byTab.set(tabId, new Map([...entries, ...(live ? live.entries() : [])]));
   reconcileHlsSegments(tabId);
   hydratedTabs.add(tabId);
   return storeFor(tabId);

@@ -1,0 +1,322 @@
+<p align="center">
+  <img src="docs/images/mediatrace-hero.png" alt="MediaTrace discovers web video and casts it to a TV" width="100%">
+</p>
+
+<h1 align="center">MediaTrace</h1>
+
+<p align="center"><a href="README.md">简体中文</a> · <strong>English</strong></p>
+
+<p align="center">
+  Discover media URLs on the current webpage in Safari and Chrome, then cast them to a DLNA device on your local network.
+</p>
+
+<p align="center">
+  M3U8 · MP4 · FLV · M4S · Web media segments · DLNA casting
+</p>
+
+---
+
+## What It Does
+
+Open a video website and start playback. MediaTrace displays the number of detected media resources on its browser toolbar icon. Click the icon to view media URLs, duration, and live/VOD type, copy an address, or cast it to a TV.
+
+```mermaid
+flowchart LR
+    A[Open a webpage and play a video] --> B[MediaTrace discovers media]
+    B --> C[View or copy the media URL]
+    B --> D[Cast to a DLNA device]
+```
+
+> **DRM-protected websites are not supported.** MediaTrace only displays ordinary media URLs already accessed by the webpage. It does not support DRM-protected video and does not bypass DRM, authentication, or website access controls.
+
+## Requirements
+
+| Browser | Requirements |
+| --- | --- |
+| Safari on macOS | macOS 12.3 or later and Xcode |
+| Safari on iPhone/iPad | iOS/iPadOS 15.4 or later and Xcode |
+| Chrome on macOS | Chrome; the local native service is also required for DLNA discovery |
+
+> **Safari builds must be signed.** The macOS, iOS, and iPadOS versions consist of a host app and a Safari Extension. Both targets must use the same valid Apple Developer Team and must be signed successfully before the system can install and display the extension. A compiled but unsigned build may not appear in Safari Settings at all.
+
+## Installing on Chrome
+
+### 1. Load the extension folder
+
+1. Open `chrome://extensions` in Chrome.
+2. Enable **Developer mode** in the upper-right corner.
+3. Click **Load unpacked**.
+4. Select the project folder:
+
+   ```text
+   ~/Desktop/MediaTrace
+   ```
+
+5. Pin MediaTrace so its icon remains visible on the browser toolbar.
+
+After changing the extension code, return to `chrome://extensions` and click **Reload** on the MediaTrace card.
+
+### 2. Install and sign the SSDP native service
+
+A Chrome extension cannot send SSDP UDP multicast packets by itself. To discover TVs and other DLNA devices, install the Native Messaging Host once on the Mac.
+
+Chrome reads user-level Native Messaging Host registrations from:
+
+```text
+~/Library/Application Support/Google/Chrome/NativeMessagingHosts/
+```
+
+MediaTrace creates this registration file by default:
+
+```text
+~/Library/Application Support/Google/Chrome/NativeMessagingHosts/app.mediatrace.json
+```
+
+This is Chrome's native-host registration directory, not the folder selected with **Load unpacked**. The unpacked extension must still be loaded from the project root, such as `/Users/your-name/Desktop/MediaTrace`.
+
+Open Terminal and run:
+
+```bash
+cd ~/Desktop/MediaTrace
+npm run build:chrome
+./scripts/install-chrome-native-host.sh
+```
+
+The installer asks for a shared Native Host Identifier:
+
+```text
+Native Host Identifier [app.mediatrace]:
+```
+
+Press Return to use the default, or enter your own identifier, for example `com.example.mediatrace.nativehost`. For unattended installation, use:
+
+```bash
+MEDIATRACE_NATIVE_ID=com.example.mediatrace.native \
+  ./scripts/install-chrome-native-host.sh
+```
+
+The script writes the same value to the extension's `NATIVE_APP_ID`, the host JSON `name` and filename, and the native app's `CFBundleIdentifier`. The default is `app.mediatrace`.
+
+Do not use the `*.Extension` identifier assigned to the Safari Extension. The installer rejects it to prevent the Chrome host and Safari extension from sharing the same local-network permission identity.
+
+The installer uses ad-hoc signing by default. If the Keychain contains a valid Apple Development or Developer ID Application certificate, specify it as follows:
+
+```bash
+MEDIATRACE_NATIVE_ID=com.example.mediatrace.native \
+MEDIATRACE_CODESIGN_IDENTITY="Developer ID Application: Example Name (TEAMID)" \
+  ./scripts/install-chrome-native-host.sh
+```
+
+With an Apple-issued identity, `codesign` should report a Team Identifier, allowing macOS to retain local-network permission for the Native Host more reliably.
+
+After confirmation, the script synchronizes `src/background.js` and `native-host/Info.plist`, generates the matching Chrome host JSON, then builds and signs the native app. Reload the extension at `chrome://extensions` and fully restart Chrome afterward.
+
+The build and installer commands automatically:
+
+- Generate or reuse `dist/chrome/mediatrace.pem` to preserve the Chrome extension ID;
+- Compile the Swift SSDP native service;
+- Sign the native service with macOS `codesign`;
+- Register the Native Messaging Host;
+- Add both the CRX ID and the current unpacked-extension ID to the allowlist.
+
+Quit Chrome completely with `Command + Q`, then reopen it.
+
+To verify Chrome's registration:
+
+```bash
+ls -la "$HOME/Library/Application Support/Google/Chrome/NativeMessagingHosts/"
+cat "$HOME/Library/Application Support/Google/Chrome/NativeMessagingHosts/app.mediatrace.json"
+```
+
+To verify the signature:
+
+```bash
+codesign --verify --deep --strict --verbose=2 \
+  "$HOME/Library/Application Support/MediaTrace/MediaTrace Native Host.app"
+```
+
+No output means signature verification succeeded.
+
+> `mediatrace.pem` is a private key. Never share it, commit it to a public repository, or delete it. Repackaging after deleting the key changes the extension ID and requires reinstalling the Native Host.
+
+## Installing on Safari
+
+### Configure your Apple signing identity
+
+The public repository does not include the author's Team ID or personal Bundle Identifier. Before the first build, run:
+
+```bash
+./scripts/configure-apple-signing.sh
+```
+
+Enter your Base Bundle Identifier and Apple Developer Team ID. The script configures all eight Debug/Release configurations for the iOS and macOS apps and extensions. Both host apps use the Base ID; both extensions use `Base ID.Extension`.
+
+For unattended configuration:
+
+```bash
+MEDIATRACE_APPLE_BASE_ID=com.example.mediatrace \
+MEDIATRACE_APPLE_TEAM_ID=YOURTEAMID \
+  ./scripts/configure-apple-signing.sh
+```
+
+Before publishing the repository, run:
+
+```bash
+./scripts/sanitize-public-project.sh
+```
+
+This removes the Apple Team ID, personal Bundle Identifiers, Chrome PEM/CRX files, and Xcode user data, and restores generic public identifiers. Back up any long-term Chrome private key privately before sanitizing, because deleting the PEM changes the Chrome extension ID.
+
+### 1. Generate the Safari project resources
+
+```bash
+cd ~/Desktop/MediaTrace
+./scripts/build-safari.sh
+```
+
+### 2. Run from Xcode
+
+1. Open:
+
+   ```text
+   safari-project/MediaTrace/MediaTrace.xcodeproj
+   ```
+
+2. Select your Team under **Signing & Capabilities**.
+3. Select `MediaTrace (macOS)` for Mac or `MediaTrace (iOS)` for iPhone/iPad.
+4. Click Run to install MediaTrace.
+
+Check both the host app and extension target for the current platform. They must use the same Team and show no red signing errors. macOS and iOS use separate targets and must be configured independently.
+
+### 3. Enable the Safari extension
+
+On macOS:
+
+1. Open Safari → Settings → Extensions.
+2. Enable MediaTrace.
+3. Grant access to **All Websites**.
+
+On iPhone/iPad:
+
+1. Open Settings → Safari → Extensions → MediaTrace.
+2. Enable **Allow Extension**.
+3. Set website access to **Allow**.
+4. For DLNA, also grant MediaTrace **Local Network** access in system settings.
+
+## Getting Started
+
+1. Open a video website and start playback.
+2. Click the MediaTrace icon on the browser toolbar.
+3. Enable **Automatic detection**.
+4. Refresh the webpage and continue playback.
+5. Choose an action from the media list:
+
+   - **Copy URL** copies an M3U8, MP4, FLV, or other detected media URL;
+   - **Cast** sends the selected media to the current DLNA device;
+   - **Clear** removes media discovered on the current webpage.
+
+The number on the extension icon is the media count for the current page.
+
+## DLNA Casting
+
+### Use AirPlay discovery to find a stable address
+
+AirPlay is used only as an address-discovery helper when manually adding a DLNA device. Under **Add device manually**, click **Find `.local` address via AirPlay**, then select the same receiver. MediaTrace fills an address such as `http://device.local:9030/description.xml`. Existing ports are preserved; when no port is present, `9030` is added automatically.
+
+If the device's IPv4 address changes, Apple systems can resolve the `.local` hostname again. Actual playback continues to use the more widely compatible DLNA AVTransport protocol.
+
+### Discover devices automatically
+
+> **Signing and SSDP permissions:** Automatic DLNA discovery sends SSDP UDP multicast traffic. Platform requirements differ.
+
+| Platform | Requirements for automatic DLNA discovery |
+| --- | --- |
+| iOS/iPadOS Safari | The app and extension must be signed correctly. Apple must approve the restricted `Multicast Networking` capability, and the App ID and provisioning profile must contain the entitlement. Local Network access must also be granted. |
+| macOS Safari | The app and extension must be signed with the same valid Team. macOS does not require the restricted iOS multicast entitlement, but Local Network access is still required. |
+| macOS Chrome | The Swift Native Host must be compiled, signed, and registered. The extension ID must be allowed, and Google Chrome must have Local Network permission. |
+
+Adding an entitlement only to the Xcode project does not mean Apple has granted it on iOS. Without Apple approval, a matching signature, and a provisioning profile containing the capability, SSDP may return `errno 65`, report that the network is unreachable, or discover no devices.
+
+1. Open the extension's **Cast devices** panel.
+2. Click **Refresh search**.
+3. Select a TV or player from the results.
+4. Return to the media list and click **Cast**.
+
+Chrome requires the native service described above. Safari uses the native SSDP service embedded in the host app.
+
+For ordinary installations without Apple's multicast approval, manually adding a device is recommended. Entering a device's `description.xml` or AVTransport Control URL does not depend on SSDP multicast and is usually more reliable.
+
+### Add a device manually
+
+If automatic discovery finds nothing, enter a device description address:
+
+```text
+Device name: Living Room TV
+Device URL: http://192.168.0.112:9030/description.xml
+```
+
+MediaTrace reads the XML and locates the AVTransport Control URL automatically. You may also enter a known Control URL directly. The device appears in the current list immediately after it is added.
+
+### Automatically cast the next episode
+
+Select a device and enable **Cast next episode**. When the webpage moves to the next episode and MediaTrace detects new media, it continues casting to the current device.
+
+## Troubleshooting
+
+### Chrome says the Native Messaging Host is forbidden
+
+Run the installer again:
+
+```bash
+./scripts/install-chrome-native-host.sh
+```
+
+Then fully quit and reopen Chrome. The script detects the current unpacked extension ID again.
+
+### No DLNA devices are found
+
+- Make sure the computer, phone, and TV are connected to the same Wi-Fi network;
+- Disable AP isolation or guest-network isolation on the router;
+- Confirm that MediaTrace has Local Network permission;
+- Chrome users should confirm that the Native Host is installed;
+- If discovery still fails, manually enter the device's `description.xml` URL.
+
+If an iPhone/iPad reports **SSDP multicast network unreachable (en0)**, confirm that both the Apple Developer configuration and the actual provisioning profile contain the `Multicast Networking` entitlement. Adding it only to the project is insufficient. After changing signing, delete the old app from the device, reinstall it, and grant Local Network access again.
+
+### Signing differences between iOS, macOS, and Chrome
+
+- **iOS/iPadOS:** In addition to valid Apple signing, SSDP multicast requires Apple's approval for the `Multicast Networking` capability. Free signing and unapproved provisioning profiles normally cannot perform automatic discovery.
+- **macOS Safari:** The restricted iOS multicast entitlement is not required. The host app and Safari Extension must be signed correctly and granted Local Network access.
+- **macOS Chrome:** Chrome does not execute Swift source code. It launches a compiled, signed, and registered Native Host. The host JSON name, extension `NATIVE_APP_ID`, Bundle Identifier, and extension allowlist must match the installer configuration.
+- **Recommended fallback:** If iOS multicast approval is unavailable, signing is unstable, or Local Network access has not been granted, manually adding a device is the most reliable option and does not require SSDP discovery.
+
+### No video is detected
+
+- Confirm that **Automatic detection** is enabled;
+- Refresh the webpage and restart playback after enabling it;
+- Confirm that the extension has access to the current site or all websites;
+- **DRM-protected websites are not supported.** Blob/MSE media, encrypted authorization, and short-lived signed media may also be impossible to detect, copy, or cast.
+
+## Usage and License Notice
+
+MediaTrace is a **free source-code project for non-commercial use only**. Subject to the following conditions, you may study, use, copy, repost, distribute, and modify the project:
+
+- You must retain the project name, original author/project attribution, and this usage and license notice;
+- Modified or redistributed versions must clearly state that they have been modified and must not be presented as the official original version;
+- Modified source code or installation packages may be shared free of charge, but software fees, license fees, and mandatory donations are prohibited;
+- Neither this project nor a modified version may be used for any direct or indirect commercial purpose. No commercial-use, commercial-integration, or commercial-sublicensing permission is granted;
+- The project's code, documentation, images, build artifacts, test data, and modified versions must not be used as training data for artificial intelligence or machine-learning systems.
+
+Prohibited commercial uses include, without limitation: selling software or services, paid downloads, paid membership features, advertising or traffic monetization, internal commercial enterprise deployment, inclusion in a paid product, paid technical services based on the project, and commercial gain through repackaging or preinstallation.
+
+Prohibited AI-data uses include, without limitation: model pretraining, continued training, fine-tuning, distillation, reinforcement learning, retrieval corpora, vectorized training sets, code-completion training, model-evaluation datasets, and collecting, copying, scraping, organizing, or providing project content for generative AI or other machine-learning systems. Using ordinary tools to read, search, compile, or modify the project is not itself data training, but project content obtained in this way must not be added to any training dataset.
+
+The project is provided free of charge **as is**, without warranties of merchantability, fitness for a particular purpose, continuous maintenance, or freedom from defects. Users are responsible for ensuring that they have lawful permission to use media content, website services, trademarks, and third-party components, and assume all risks and liabilities arising from use, modification, or distribution. Third-party code and dependencies remain subject to their respective licenses.
+
+**All forms of commercial use are prohibited.** Attribution, redistribution, modification, free downloads, or retention of this notice does not grant commercial-use rights. If you cannot determine whether a use is commercial, treat it as unlicensed and stop using the project rather than interpreting the permission broadly.
+
+Any use that violates these non-commercial restrictions exceeds the granted permission. Permission to copy, modify, distribute, deploy, or create derivative works terminates immediately. The project rights holder reserves the right to demand cessation of use, deletion of copies, and to pursue remedies available under copyright law. This notice is intended to make the permission boundaries clear and avoid copyright or licensing disputes.
+
+---
+
+<p align="center">Always free · Non-commercial modification and redistribution allowed · Commercial use and AI training prohibited</p>
