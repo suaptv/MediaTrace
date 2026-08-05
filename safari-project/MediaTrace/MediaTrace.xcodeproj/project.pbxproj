@@ -1,0 +1,999 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		4F71B893302035D000F22B5C /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F71B892302035D000F22B5C /* AppDelegate.swift */; };
+		4F71B895302035D000F22B5C /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F71B894302035D000F22B5C /* SceneDelegate.swift */; };
+		4F71B898302035D000F22B5C /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4F71B896302035D000F22B5C /* LaunchScreen.storyboard */; };
+		4F71B89B302035D000F22B5C /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4F71B899302035D000F22B5C /* Main.storyboard */; };
+		4F71B8A4302035D000F22B5C /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F71B8A3302035D000F22B5C /* AppDelegate.swift */; };
+		4F71B8A7302035D000F22B5C /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4F71B8A5302035D000F22B5C /* Main.storyboard */; };
+		4F71B8AE302035D000F22B5C /* MediaTrace Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4F71B8AD302035D000F22B5C /* MediaTrace Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		4F71B8B8302035D000F22B5C /* MediaTrace Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4F71B8B7302035D000F22B5C /* MediaTrace Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		4F71B8BD302035D000F22B5C /* Main.html in Resources */ = {isa = PBXBuildFile; fileRef = 4F71B882302035CF00F22B5C /* Main.html */; };
+		4F71B8BE302035D000F22B5C /* Main.html in Resources */ = {isa = PBXBuildFile; fileRef = 4F71B882302035CF00F22B5C /* Main.html */; };
+		4F71B8BF302035D000F22B5C /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 4F71B884302035CF00F22B5C /* Icon.png */; };
+		4F71B8C0302035D000F22B5C /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 4F71B884302035CF00F22B5C /* Icon.png */; };
+		4F71B8C1302035D000F22B5C /* Style.css in Resources */ = {isa = PBXBuildFile; fileRef = 4F71B885302035CF00F22B5C /* Style.css */; };
+		4F71B8C2302035D000F22B5C /* Style.css in Resources */ = {isa = PBXBuildFile; fileRef = 4F71B885302035CF00F22B5C /* Style.css */; };
+		4F71B8C3302035D000F22B5C /* Script.js in Resources */ = {isa = PBXBuildFile; fileRef = 4F71B886302035CF00F22B5C /* Script.js */; };
+		4F71B8C4302035D000F22B5C /* Script.js in Resources */ = {isa = PBXBuildFile; fileRef = 4F71B886302035CF00F22B5C /* Script.js */; };
+		4F71B8C5302035D000F22B5C /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F71B887302035CF00F22B5C /* ViewController.swift */; };
+		4F71B8C6302035D000F22B5C /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F71B887302035CF00F22B5C /* ViewController.swift */; };
+		4F71B8C7302035D000F22B5C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4F71B888302035D000F22B5C /* Assets.xcassets */; };
+		4F71B8C8302035D000F22B5C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4F71B888302035D000F22B5C /* Assets.xcassets */; };
+		4F71B8C9302035D000F22B5C /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F71B88A302035D000F22B5C /* SafariWebExtensionHandler.swift */; };
+		4F71B8CA302035D000F22B5C /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F71B88A302035D000F22B5C /* SafariWebExtensionHandler.swift */; };
+		4F71B8DF302035D100F22B5C /* manifest.json (macOS) in Resources */ = {isa = PBXBuildFile; fileRef = 4F71B8E6302035D100F22B5C /* manifest.json (macOS) */; };
+		4F71B8E0302035D100F22B5C /* assets in Resources */ = {isa = PBXBuildFile; fileRef = 4F71B8DD302035D100F22B5C /* assets */; };
+		4F71B8E1302035D100F22B5C /* src in Resources */ = {isa = PBXBuildFile; fileRef = 4F71B8DE302035D100F22B5C /* src */; };
+		4F71B8E2302035D100F22B5C /* manifest.json (iOS) in Resources */ = {isa = PBXBuildFile; fileRef = 4F71B8E5302035D100F22B5C /* manifest.json (iOS) */; };
+		4F71B8E3302035D100F22B5C /* assets in Resources */ = {isa = PBXBuildFile; fileRef = 4F71B8DD302035D100F22B5C /* assets */; };
+		4F71B8E4302035D100F22B5C /* src in Resources */ = {isa = PBXBuildFile; fileRef = 4F71B8DE302035D100F22B5C /* src */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		4F71B8AF302035D000F22B5C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4F71B87C302035CF00F22B5C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4F71B8AC302035D000F22B5C;
+			remoteInfo = "MediaTrace Extension (iOS)";
+		};
+		4F71B8B9302035D000F22B5C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4F71B87C302035CF00F22B5C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4F71B8B6302035D000F22B5C;
+			remoteInfo = "MediaTrace Extension (macOS)";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		4F71B8D0302035D000F22B5C /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				4F71B8AE302035D000F22B5C /* MediaTrace Extension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4F71B8D7302035D000F22B5C /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				4F71B8B8302035D000F22B5C /* MediaTrace Extension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		4F71B883302035CF00F22B5C /* Base */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = Base; path = Base.lproj/Main.html; sourceTree = "<group>"; };
+		4F71B884302035CF00F22B5C /* Icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Icon.png; sourceTree = "<group>"; };
+		4F71B885302035CF00F22B5C /* Style.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = Style.css; sourceTree = "<group>"; };
+		4F71B886302035CF00F22B5C /* Script.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = Script.js; sourceTree = "<group>"; };
+		4F71B887302035CF00F22B5C /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		4F71B888302035D000F22B5C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		4F71B88A302035D000F22B5C /* SafariWebExtensionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariWebExtensionHandler.swift; sourceTree = "<group>"; };
+		4F71B88F302035D000F22B5C /* MediaTrace.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MediaTrace.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4F71B892302035D000F22B5C /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		4F71B894302035D000F22B5C /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
+		4F71B897302035D000F22B5C /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		4F71B89A302035D000F22B5C /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		4F71B89C302035D000F22B5C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		4F71B8A1302035D000F22B5C /* MediaTrace.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MediaTrace.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4F71B8A3302035D000F22B5C /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		4F71B8A6302035D000F22B5C /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		4F71B8A8302035D000F22B5C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		4F71B8AD302035D000F22B5C /* MediaTrace Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "MediaTrace Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		4F71B8B2302035D000F22B5C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		4F71B8B7302035D000F22B5C /* MediaTrace Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "MediaTrace Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		4F71B8BC302035D000F22B5C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		4F71B8DC302035D100F22B5C /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = manifest.json; path = Resources/manifest.json; sourceTree = "<group>"; };
+		4F71B8DD302035D100F22B5C /* assets */ = {isa = PBXFileReference; lastKnownFileType = folder; name = assets; path = Resources/assets; sourceTree = "<group>"; };
+		4F71B8DE302035D100F22B5C /* src */ = {isa = PBXFileReference; lastKnownFileType = folder; name = src; path = Resources/src; sourceTree = "<group>"; };
+		4F71B8E5302035D100F22B5C /* manifest.json (iOS) */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "manifest.json (iOS)"; path = Resources/Platforms/iOS/manifest.json; sourceTree = "<group>"; };
+		4F71B8E6302035D100F22B5C /* manifest.json (macOS) */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "manifest.json (macOS)"; path = Resources/Platforms/macOS/manifest.json; sourceTree = "<group>"; };
+		4FABD4763022108400F1CB4C /* MediaTrace (iOS).entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "MediaTrace (iOS).entitlements"; sourceTree = "<group>"; };
+		4FABD4773022186600F1CB4C /* MediaTrace Extension (iOS).entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "MediaTrace Extension (iOS).entitlements"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		4F71B88C302035D000F22B5C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4F71B89E302035D000F22B5C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4F71B8AA302035D000F22B5C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4F71B8B4302035D000F22B5C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		4F71B87B302035CF00F22B5C = {
+			isa = PBXGroup;
+			children = (
+				4FABD4773022186600F1CB4C /* MediaTrace Extension (iOS).entitlements */,
+				4FABD4763022108400F1CB4C /* MediaTrace (iOS).entitlements */,
+				4F71B880302035CF00F22B5C /* Shared (App) */,
+				4F71B889302035D000F22B5C /* Shared (Extension) */,
+				4F71B891302035D000F22B5C /* iOS (App) */,
+				4F71B8A2302035D000F22B5C /* macOS (App) */,
+				4F71B8B1302035D000F22B5C /* iOS (Extension) */,
+				4F71B8BB302035D000F22B5C /* macOS (Extension) */,
+				4F71B890302035D000F22B5C /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		4F71B880302035CF00F22B5C /* Shared (App) */ = {
+			isa = PBXGroup;
+			children = (
+				4F71B887302035CF00F22B5C /* ViewController.swift */,
+				4F71B888302035D000F22B5C /* Assets.xcassets */,
+				4F71B881302035CF00F22B5C /* Resources */,
+			);
+			path = "Shared (App)";
+			sourceTree = "<group>";
+		};
+		4F71B881302035CF00F22B5C /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				4F71B882302035CF00F22B5C /* Main.html */,
+				4F71B884302035CF00F22B5C /* Icon.png */,
+				4F71B885302035CF00F22B5C /* Style.css */,
+				4F71B886302035CF00F22B5C /* Script.js */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		4F71B889302035D000F22B5C /* Shared (Extension) */ = {
+			isa = PBXGroup;
+			children = (
+				4F71B8DB302035D100F22B5C /* Resources */,
+				4F71B88A302035D000F22B5C /* SafariWebExtensionHandler.swift */,
+			);
+			path = "Shared (Extension)";
+			sourceTree = "<group>";
+		};
+		4F71B890302035D000F22B5C /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				4F71B88F302035D000F22B5C /* MediaTrace.app */,
+				4F71B8A1302035D000F22B5C /* MediaTrace.app */,
+				4F71B8AD302035D000F22B5C /* MediaTrace Extension.appex */,
+				4F71B8B7302035D000F22B5C /* MediaTrace Extension.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		4F71B891302035D000F22B5C /* iOS (App) */ = {
+			isa = PBXGroup;
+			children = (
+				4F71B892302035D000F22B5C /* AppDelegate.swift */,
+				4F71B894302035D000F22B5C /* SceneDelegate.swift */,
+				4F71B896302035D000F22B5C /* LaunchScreen.storyboard */,
+				4F71B899302035D000F22B5C /* Main.storyboard */,
+				4F71B89C302035D000F22B5C /* Info.plist */,
+			);
+			path = "iOS (App)";
+			sourceTree = "<group>";
+		};
+		4F71B8A2302035D000F22B5C /* macOS (App) */ = {
+			isa = PBXGroup;
+			children = (
+				4F71B8A3302035D000F22B5C /* AppDelegate.swift */,
+				4F71B8A5302035D000F22B5C /* Main.storyboard */,
+				4F71B8A8302035D000F22B5C /* Info.plist */,
+			);
+			path = "macOS (App)";
+			sourceTree = "<group>";
+		};
+		4F71B8B1302035D000F22B5C /* iOS (Extension) */ = {
+			isa = PBXGroup;
+			children = (
+				4F71B8B2302035D000F22B5C /* Info.plist */,
+			);
+			path = "iOS (Extension)";
+			sourceTree = "<group>";
+		};
+		4F71B8BB302035D000F22B5C /* macOS (Extension) */ = {
+			isa = PBXGroup;
+			children = (
+				4F71B8BC302035D000F22B5C /* Info.plist */,
+			);
+			path = "macOS (Extension)";
+			sourceTree = "<group>";
+		};
+		4F71B8DB302035D100F22B5C /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				4F71B8DC302035D100F22B5C /* manifest.json */,
+				4F71B8E5302035D100F22B5C /* manifest.json (iOS) */,
+				4F71B8E6302035D100F22B5C /* manifest.json (macOS) */,
+				4F71B8DD302035D100F22B5C /* assets */,
+				4F71B8DE302035D100F22B5C /* src */,
+			);
+			name = Resources;
+			path = "Shared (Extension)";
+			sourceTree = SOURCE_ROOT;
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		4F71B88E302035D000F22B5C /* MediaTrace (iOS) */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4F71B8D1302035D000F22B5C /* Build configuration list for PBXNativeTarget "MediaTrace (iOS)" */;
+			buildPhases = (
+				4F71B88B302035D000F22B5C /* Sources */,
+				4F71B88C302035D000F22B5C /* Frameworks */,
+				4F71B88D302035D000F22B5C /* Resources */,
+				4F71B8D0302035D000F22B5C /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				4F71B8B0302035D000F22B5C /* PBXTargetDependency */,
+			);
+			name = "MediaTrace (iOS)";
+			packageProductDependencies = (
+			);
+			productName = "MediaTrace (iOS)";
+			productReference = 4F71B88F302035D000F22B5C /* MediaTrace.app */;
+			productType = "com.apple.product-type.application";
+		};
+		4F71B8A0302035D000F22B5C /* MediaTrace (macOS) */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4F71B8D8302035D000F22B5C /* Build configuration list for PBXNativeTarget "MediaTrace (macOS)" */;
+			buildPhases = (
+				4F71B89D302035D000F22B5C /* Sources */,
+				4F71B89E302035D000F22B5C /* Frameworks */,
+				4F71B89F302035D000F22B5C /* Resources */,
+				4F71B8D7302035D000F22B5C /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				4F71B8BA302035D000F22B5C /* PBXTargetDependency */,
+			);
+			name = "MediaTrace (macOS)";
+			packageProductDependencies = (
+			);
+			productName = "MediaTrace (macOS)";
+			productReference = 4F71B8A1302035D000F22B5C /* MediaTrace.app */;
+			productType = "com.apple.product-type.application";
+		};
+		4F71B8AC302035D000F22B5C /* MediaTrace Extension (iOS) */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4F71B8CD302035D000F22B5C /* Build configuration list for PBXNativeTarget "MediaTrace Extension (iOS)" */;
+			buildPhases = (
+				4F71B8A9302035D000F22B5C /* Sources */,
+				4F71B8AA302035D000F22B5C /* Frameworks */,
+				4F71B8AB302035D000F22B5C /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "MediaTrace Extension (iOS)";
+			packageProductDependencies = (
+			);
+			productName = "MediaTrace Extension (iOS)";
+			productReference = 4F71B8AD302035D000F22B5C /* MediaTrace Extension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		4F71B8B6302035D000F22B5C /* MediaTrace Extension (macOS) */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4F71B8D4302035D000F22B5C /* Build configuration list for PBXNativeTarget "MediaTrace Extension (macOS)" */;
+			buildPhases = (
+				4F71B8B3302035D000F22B5C /* Sources */,
+				4F71B8B4302035D000F22B5C /* Frameworks */,
+				4F71B8B5302035D000F22B5C /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "MediaTrace Extension (macOS)";
+			packageProductDependencies = (
+			);
+			productName = "MediaTrace Extension (macOS)";
+			productReference = 4F71B8B7302035D000F22B5C /* MediaTrace Extension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		4F71B87C302035CF00F22B5C /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2630;
+				LastUpgradeCheck = 2630;
+				TargetAttributes = {
+					4F71B88E302035D000F22B5C = {
+						CreatedOnToolsVersion = 26.3;
+					};
+					4F71B8A0302035D000F22B5C = {
+						CreatedOnToolsVersion = 26.3;
+					};
+					4F71B8AC302035D000F22B5C = {
+						CreatedOnToolsVersion = 26.3;
+					};
+					4F71B8B6302035D000F22B5C = {
+						CreatedOnToolsVersion = 26.3;
+					};
+				};
+			};
+			buildConfigurationList = 4F71B87F302035CF00F22B5C /* Build configuration list for PBXProject "MediaTrace" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 4F71B87B302035CF00F22B5C;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 4F71B890302035D000F22B5C /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				4F71B88E302035D000F22B5C /* MediaTrace (iOS) */,
+				4F71B8A0302035D000F22B5C /* MediaTrace (macOS) */,
+				4F71B8AC302035D000F22B5C /* MediaTrace Extension (iOS) */,
+				4F71B8B6302035D000F22B5C /* MediaTrace Extension (macOS) */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		4F71B88D302035D000F22B5C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4F71B8BF302035D000F22B5C /* Icon.png in Resources */,
+				4F71B898302035D000F22B5C /* LaunchScreen.storyboard in Resources */,
+				4F71B8BD302035D000F22B5C /* Main.html in Resources */,
+				4F71B8C3302035D000F22B5C /* Script.js in Resources */,
+				4F71B8C7302035D000F22B5C /* Assets.xcassets in Resources */,
+				4F71B89B302035D000F22B5C /* Main.storyboard in Resources */,
+				4F71B8C1302035D000F22B5C /* Style.css in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4F71B89F302035D000F22B5C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4F71B8C0302035D000F22B5C /* Icon.png in Resources */,
+				4F71B8C2302035D000F22B5C /* Style.css in Resources */,
+				4F71B8A7302035D000F22B5C /* Main.storyboard in Resources */,
+				4F71B8C4302035D000F22B5C /* Script.js in Resources */,
+				4F71B8C8302035D000F22B5C /* Assets.xcassets in Resources */,
+				4F71B8BE302035D000F22B5C /* Main.html in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4F71B8AB302035D000F22B5C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4F71B8E4302035D100F22B5C /* src in Resources */,
+				4F71B8E2302035D100F22B5C /* manifest.json (iOS) in Resources */,
+				4F71B8E3302035D100F22B5C /* assets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4F71B8B5302035D000F22B5C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4F71B8E1302035D100F22B5C /* src in Resources */,
+				4F71B8DF302035D100F22B5C /* manifest.json (macOS) in Resources */,
+				4F71B8E0302035D100F22B5C /* assets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		4F71B88B302035D000F22B5C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4F71B8C5302035D000F22B5C /* ViewController.swift in Sources */,
+				4F71B893302035D000F22B5C /* AppDelegate.swift in Sources */,
+				4F71B895302035D000F22B5C /* SceneDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4F71B89D302035D000F22B5C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4F71B8C6302035D000F22B5C /* ViewController.swift in Sources */,
+				4F71B8A4302035D000F22B5C /* AppDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4F71B8A9302035D000F22B5C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4F71B8C9302035D000F22B5C /* SafariWebExtensionHandler.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4F71B8B3302035D000F22B5C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4F71B8CA302035D000F22B5C /* SafariWebExtensionHandler.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		4F71B8B0302035D000F22B5C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4F71B8AC302035D000F22B5C /* MediaTrace Extension (iOS) */;
+			targetProxy = 4F71B8AF302035D000F22B5C /* PBXContainerItemProxy */;
+		};
+		4F71B8BA302035D000F22B5C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4F71B8B6302035D000F22B5C /* MediaTrace Extension (macOS) */;
+			targetProxy = 4F71B8B9302035D000F22B5C /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		4F71B882302035CF00F22B5C /* Main.html */ = {
+			isa = PBXVariantGroup;
+			children = (
+				4F71B883302035CF00F22B5C /* Base */,
+			);
+			name = Main.html;
+			sourceTree = "<group>";
+		};
+		4F71B896302035D000F22B5C /* LaunchScreen.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				4F71B897302035D000F22B5C /* Base */,
+			);
+			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+		4F71B899302035D000F22B5C /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				4F71B89A302035D000F22B5C /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+		4F71B8A5302035D000F22B5C /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				4F71B8A6302035D000F22B5C /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		4F71B8CB302035D000F22B5C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		4F71B8CC302035D000F22B5C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		4F71B8CE302035D000F22B5C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "MediaTrace Extension (iOS).entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "iOS (Extension)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "MediaTrace Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "MediaTrace 使用局域网搜索并连接 DLNA 与 AirPlay 设备。";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.mediatrace.Extension;
+				PRODUCT_NAME = "MediaTrace Extension";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		4F71B8CF302035D000F22B5C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "MediaTrace Extension (iOS).entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "iOS (Extension)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "MediaTrace Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "MediaTrace 使用局域网搜索并连接 DLNA 与 AirPlay 设备。";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.mediatrace.Extension;
+				PRODUCT_NAME = "MediaTrace Extension";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		4F71B8D2302035D000F22B5C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "MediaTrace (iOS).entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "iOS (App)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = MediaTrace;
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "MediaTrace 使用局域网搜索并连接 DLNA 与 AirPlay 设备。";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UIMainStoryboardFile = Main;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.mediatrace;
+				PRODUCT_NAME = MediaTrace;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		4F71B8D3302035D000F22B5C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "MediaTrace (iOS).entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "iOS (App)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = MediaTrace;
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "MediaTrace 使用局域网搜索并连接 DLNA 与 AirPlay 设备。";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UIMainStoryboardFile = Main;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.mediatrace;
+				PRODUCT_NAME = MediaTrace;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		4F71B8D5302035D000F22B5C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "macOS (Extension)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "MediaTrace Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "MediaTrace 使用局域网搜索并连接 DLNA 与 AirPlay 设备。";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.mediatrace.Extension;
+				PRODUCT_NAME = "MediaTrace Extension";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		4F71B8D6302035D000F22B5C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "macOS (Extension)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "MediaTrace Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "MediaTrace 使用局域网搜索并连接 DLNA 与 AirPlay 设备。";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.mediatrace.Extension;
+				PRODUCT_NAME = "MediaTrace Extension";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		4F71B8D9302035D000F22B5C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "macOS (App)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = MediaTrace;
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "MediaTrace 使用局域网搜索并连接 DLNA 与 AirPlay 设备。";
+				INFOPLIST_KEY_NSMainStoryboardFile = Main;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.mediatrace;
+				PRODUCT_NAME = MediaTrace;
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		4F71B8DA302035D000F22B5C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "macOS (App)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = MediaTrace;
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "MediaTrace 使用局域网搜索并连接 DLNA 与 AirPlay 设备。";
+				INFOPLIST_KEY_NSMainStoryboardFile = Main;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 12.3;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.mediatrace;
+				PRODUCT_NAME = MediaTrace;
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		4F71B87F302035CF00F22B5C /* Build configuration list for PBXProject "MediaTrace" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4F71B8CB302035D000F22B5C /* Debug */,
+				4F71B8CC302035D000F22B5C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4F71B8CD302035D000F22B5C /* Build configuration list for PBXNativeTarget "MediaTrace Extension (iOS)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4F71B8CE302035D000F22B5C /* Debug */,
+				4F71B8CF302035D000F22B5C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4F71B8D1302035D000F22B5C /* Build configuration list for PBXNativeTarget "MediaTrace (iOS)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4F71B8D2302035D000F22B5C /* Debug */,
+				4F71B8D3302035D000F22B5C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4F71B8D4302035D000F22B5C /* Build configuration list for PBXNativeTarget "MediaTrace Extension (macOS)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4F71B8D5302035D000F22B5C /* Debug */,
+				4F71B8D6302035D000F22B5C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4F71B8D8302035D000F22B5C /* Build configuration list for PBXNativeTarget "MediaTrace (macOS)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4F71B8D9302035D000F22B5C /* Debug */,
+				4F71B8DA302035D000F22B5C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 4F71B87C302035CF00F22B5C /* Project object */;
+}

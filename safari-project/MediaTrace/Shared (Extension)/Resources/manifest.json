@@ -1,0 +1,60 @@
+{
+  "manifest_version": 3,
+  "name": "MediaTrace",
+  "version": "1.0.0",
+  "description": "发现当前网页中的 M3U8 与 MP4 地址，并读取媒体时长。",
+  "icons": {
+    "16": "assets/icons/icon-16.png",
+    "32": "assets/icons/icon-32.png",
+    "48": "assets/icons/icon-48.png",
+    "128": "assets/icons/icon-128.png",
+    "256": "assets/icons/icon-256.png",
+    "512": "assets/icons/icon-512.png"
+  },
+  "permissions": [
+    "storage",
+    "tabs",
+    "nativeMessaging"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "src/background.js"
+  },
+  "action": {
+    "default_title": "MediaTrace",
+    "default_popup": "src/popup/popup.html",
+    "default_icon": {
+      "16": "assets/icons/icon-16.png",
+      "32": "assets/icons/icon-32.png",
+      "48": "assets/icons/icon-48.png",
+      "128": "assets/icons/icon-128.png",
+      "256": "assets/icons/icon-256.png",
+      "512": "assets/icons/icon-512.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.douyu.com/*"
+      ],
+      "js": [
+        "src/adapters/douyu-main.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN",
+      "all_frames": false
+    },
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "src/content.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ]
+}

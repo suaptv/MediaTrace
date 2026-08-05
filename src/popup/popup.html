@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MediaTrace</title><link rel="stylesheet" href="popup.css"></head>
+<body><header><div><h1>MediaTrace</h1><p id="summary">检测功能已关闭</p></div><label class="switch"><input id="enabled" type="checkbox"><span></span><b>自动检测</b></label></header>
+<div class="tabs" role="tablist"><button id="media-tab" class="active" role="tab">媒体</button><button id="dlna-tab" role="tab">投屏设备</button></div>
+<section id="media-panel">
+  <nav><span>当前网页媒体</span><button id="clear" title="清空">清空</button></nav>
+  <main id="list" aria-live="polite"><div class="empty">正在读取网络流量…</div></main>
+</section>
+<section id="dlna-panel" hidden>
+  <nav><span>DLNA 设备</span><div class="nav-actions"><button id="connected-devices">管理DLNA服务器</button><button id="refresh-devices" class="primary">刷新搜索</button></div></nav>
+  <div class="device-settings"><div class="device-options"><label><input id="remember-device" type="checkbox"> 投屏成功后记住设备</label><label><input id="auto-cast-next" type="checkbox"> 下一集投屏</label></div><span id="dlna-status"></span></div>
+  <div id="device-list" class="device-list"><div class="empty compact">尚未搜索设备</div></div>
+  <details class="manual-add"><summary>手动添加设备</summary><form id="add-device-form">
+    <input id="device-name" required placeholder="设备名称">
+    <input id="device-control-url" required type="url" placeholder="description.xml 或 AVTransport Control URL">
+    <button id="find-airplay-address" type="button">从 AirPlay 查找 .local 地址</button>
+    <div id="airplay-helper" class="airplay-helper" hidden><p>选择设备后会把稳定的主机名填入上面的 DLNA 地址。</p><div id="airplay-helper-list" class="airplay-list"></div></div>
+    <button class="primary" type="submit">添加</button>
+  </form></details>
+</section>
+<section id="connected-panel" hidden>
+  <nav><button id="back-to-devices">‹ 返回</button><span>管理设备</span><span></span></nav>
+  <div id="connected-list" class="device-list"><div class="empty compact">尚无连接成功的设备</div></div>
+</section>
+<template id="row"><article class="card"><div class="top"><span class="badge"></span><span class="duration"></span></div><strong class="domain"></strong><p class="url"></p><div class="meta"><span class="status"></span><div class="row-actions"><button class="cast">投屏</button><button class="copy">复制地址</button></div></div></article></template>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden><strong></strong><span></span></div>
+<dialog id="clear-dialog" aria-labelledby="clear-title" aria-describedby="clear-description">
+  <form method="dialog">
+    <h2 id="clear-title">清空检测结果？</h2>
+    <p id="clear-description">将清除当前网页已经捕获的全部媒体地址，此操作无法撤销。</p>
+    <div class="dialog-actions">
+      <button value="cancel">取消</button>
+      <button id="confirm-clear" class="danger" value="confirm">清空</button>
+    </div>
+  </form>
+</dialog>
+<script type="module" src="popup.js"></script></body></html>

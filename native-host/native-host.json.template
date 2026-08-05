@@ -1,0 +1,7 @@
+{
+  "name": "__NATIVE_HOST_NAME__",
+  "description": "MediaTrace DLNA discovery and casting host",
+  "path": "__HOST_PATH__",
+  "type": "stdio",
+  "allowed_origins": [__ALLOWED_ORIGINS__]
+}

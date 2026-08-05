@@ -1,0 +1,12 @@
+{
+  "name": "mediatrace-extension",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "build:chrome": "./scripts/build-chrome-crx.sh",
+    "install:chrome-host": "./scripts/install-chrome-native-host.sh",
+    "uninstall:chrome-host": "./scripts/uninstall-chrome-native-host.sh"
+  }
+}
