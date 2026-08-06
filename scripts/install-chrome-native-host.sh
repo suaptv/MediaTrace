@@ -6,7 +6,8 @@ PROJECT_DIR=$(dirname -- "$SCRIPT_DIR")
 KEY_PATH="$PROJECT_DIR/dist/chrome/mediatrace.pem"
 SOURCE_PATH="$PROJECT_DIR/native-host/Sources/main.swift"
 INSTALL_DIR="$HOME/Library/Application Support/MediaTrace"
-HOST_DIR="$HOME/Library/Application Support/Google/Chrome/NativeMessagingHosts"
+CHROME_HOST_DIR="$HOME/Library/Application Support/Google/Chrome/NativeMessagingHosts"
+EDGE_HOST_DIR="$HOME/Library/Application Support/Microsoft Edge/NativeMessagingHosts"
 APP_DIR="$INSTALL_DIR/MediaTrace Native Host.app"
 HOST_PATH="$APP_DIR/Contents/MacOS/mediatrace-native-host"
 MODULE_CACHE="$INSTALL_DIR/ModuleCache"
@@ -53,14 +54,16 @@ node -e '
   if (updated === source && !source.includes(`const NATIVE_APP_ID = "${id}";`)) throw new Error("NATIVE_APP_ID not found");
   fs.writeFileSync(file, updated);
 ' "$PROJECT_DIR/src/background.js" "$NATIVE_ID"
-MANIFEST_PATH="$HOST_DIR/$NATIVE_ID.json"
+node "$PROJECT_DIR/scripts/prepare-chromium-background.mjs"
+CHROME_MANIFEST_PATH="$CHROME_HOST_DIR/$NATIVE_ID.json"
+EDGE_MANIFEST_PATH="$EDGE_HOST_DIR/$NATIVE_ID.json"
 
 if [ ! -f "$KEY_PATH" ]; then
-  echo "Chrome private key is absent; generating a new local CRX identity..."
+  echo "Chromium extension private key is absent; generating a new local CRX identity..."
   "$PROJECT_DIR/scripts/build-chrome-crx.sh"
 fi
 if [ ! -f "$KEY_PATH" ]; then
-  echo "Error: Chrome did not generate the private key: $KEY_PATH" >&2
+  echo "Error: the Chromium package did not generate the private key: $KEY_PATH" >&2
   exit 1
 fi
 
@@ -76,7 +79,7 @@ fi
 # also provide a currently visible Chrome ID when Chrome has not flushed its
 # profile Preferences file yet.
 ALLOWED_ORIGINS="\"chrome-extension://$EXTENSION_ID/\""
-EXTRA_EXTENSION_IDS=${MEDIATRACE_CHROME_EXTENSION_IDS:-${MEDIATRACE_CHROME_EXTENSION_ID:-}}
+EXTRA_EXTENSION_IDS="${MEDIATRACE_CHROME_EXTENSION_IDS:-${MEDIATRACE_CHROME_EXTENSION_ID:-}} ${MEDIATRACE_EDGE_EXTENSION_IDS:-${MEDIATRACE_EDGE_EXTENSION_ID:-}}"
 for EXTRA_ID in $(printf '%s' "$EXTRA_EXTENSION_IDS" | tr ',' ' '); do
   case "$EXTRA_ID" in
     *[!a-p]*)
@@ -93,8 +96,8 @@ for EXTRA_ID in $(printf '%s' "$EXTRA_EXTENSION_IDS" | tr ',' ' '); do
     *) ALLOWED_ORIGINS="$ALLOWED_ORIGINS, \"chrome-extension://$EXTRA_ID/\"" ;;
   esac
 done
-CHROME_DATA_DIR="$HOME/Library/Application Support/Google/Chrome"
-for PREFERENCES_PATH in "$CHROME_DATA_DIR"/*/Preferences "$CHROME_DATA_DIR"/*/"Secure Preferences"; do
+for BROWSER_DATA_DIR in "$HOME/Library/Application Support/Google/Chrome" "$HOME/Library/Application Support/Microsoft Edge"; do
+  for PREFERENCES_PATH in "$BROWSER_DATA_DIR"/*/Preferences "$BROWSER_DATA_DIR"/*/"Secure Preferences"; do
   [ -f "$PREFERENCES_PATH" ] || continue
   UNPACKED_IDS=$(node -e '
     const fs = require("fs");
@@ -114,13 +117,14 @@ for PREFERENCES_PATH in "$CHROME_DATA_DIR"/*/Preferences "$CHROME_DATA_DIR"/*/"S
       *) ALLOWED_ORIGINS="$ALLOWED_ORIGINS, \"chrome-extension://$UNPACKED_ID/\"" ;;
     esac
   done
+  done
 done
 
-mkdir -p "$APP_DIR/Contents/MacOS" "$HOST_DIR" "$MODULE_CACHE"
+mkdir -p "$APP_DIR/Contents/MacOS" "$CHROME_HOST_DIR" "$EDGE_HOST_DIR" "$MODULE_CACHE"
 if [ -f "$HOST_ID_STATE" ]; then
   PREVIOUS_NATIVE_ID=$(sed -n '1p' "$HOST_ID_STATE")
   if [ -n "$PREVIOUS_NATIVE_ID" ] && [ "$PREVIOUS_NATIVE_ID" != "$NATIVE_ID" ]; then
-    rm -f "$HOST_DIR/$PREVIOUS_NATIVE_ID.json"
+    rm -f "$CHROME_HOST_DIR/$PREVIOUS_NATIVE_ID.json" "$EDGE_HOST_DIR/$PREVIOUS_NATIVE_ID.json"
   fi
 fi
 xcrun swiftc -module-cache-path "$MODULE_CACHE" -O "$SOURCE_PATH" -o "$HOST_PATH"
@@ -133,15 +137,17 @@ else
 fi
 
 sed -e "s|__NATIVE_HOST_NAME__|$NATIVE_ID|g" -e "s|__HOST_PATH__|$HOST_PATH|g" -e "s|__ALLOWED_ORIGINS__|$ALLOWED_ORIGINS|g" \
-  "$PROJECT_DIR/native-host/native-host.json.template" > "$MANIFEST_PATH"
-chmod 644 "$MANIFEST_PATH"
+  "$PROJECT_DIR/native-host/native-host.json.template" > "$CHROME_MANIFEST_PATH"
+cp "$CHROME_MANIFEST_PATH" "$EDGE_MANIFEST_PATH"
+chmod 644 "$CHROME_MANIFEST_PATH" "$EDGE_MANIFEST_PATH"
 printf '%s\n' "$NATIVE_ID" > "$HOST_ID_STATE"
 
-echo "MediaTrace Chrome Native Host installed."
+echo "MediaTrace Chrome/Edge Native Host installed."
 echo "Native Host Identifier: $NATIVE_ID"
 echo "Code Sign Identity: $SIGN_IDENTITY"
 echo "Extension ID: $EXTENSION_ID"
 echo "Allowed origins: $ALLOWED_ORIGINS"
 echo "Executable: $HOST_PATH"
-echo "Manifest: $MANIFEST_PATH"
-echo "Restart Chrome before using DLNA discovery."
+echo "Chrome Manifest: $CHROME_MANIFEST_PATH"
+echo "Edge Manifest: $EDGE_MANIFEST_PATH"
+echo "Restart Chrome and Microsoft Edge before using DLNA discovery."

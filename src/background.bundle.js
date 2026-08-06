@@ -1,7 +1,4 @@
-// Safari 15.4+ Manifest V3 background bundle (generated)
-// macOS uses webRequest; iOS/iPadOS use content-script traffic observation.
-const mediatraceIOS = /iPhone|iPad|iPod/.test(navigator.platform) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-globalThis.MEDIATRACE_WEB_REQUEST_ENABLED = !mediatraceIOS;
+// Generated Chromium Manifest V3 background bundle. Do not edit directly.
 const HEAD_BYTES = 1024 * 1024;
 // FLV onMetaData normally lives in the first script tag. Reading 64 KiB is
 // enough for the header and metadata without keeping a live response open.
@@ -364,7 +361,7 @@ async function getMp4Duration(url, signal, options = {}) {
 }
 
 function formatDuration(seconds) {
-  if (!Number.isFinite(seconds)) return "未知";
+  if (!Number.isFinite(seconds)) return "\u672a\u77e5";
   const total = Math.max(0, Math.round(seconds));
   const h = Math.floor(total / 3600);
   const m = Math.floor((total % 3600) / 60);
@@ -422,13 +419,13 @@ function xmlValue(xml, localName) {
 function parseDlnaDescription(xml, location) {
   const services = xml.match(/<(?:[\w-]+:)?service\b[^>]*>[\s\S]*?<\/(?:[\w-]+:)?service>/gi) ?? [];
   const avTransport = services.find((service) => /urn:schemas-upnp-org:service:AVTransport:/i.test(xmlValue(service, "serviceType")));
-  if (!avTransport) throw new Error("设备描述中没有 AVTransport 服务");
+  if (!avTransport) throw new Error("\u8bbe\u5907\u63cf\u8ff0\u4e2d\u6ca1\u6709 AVTransport \u670d\u52a1");
   const controlPath = xmlValue(avTransport, "controlURL");
-  if (!controlPath) throw new Error("AVTransport 服务缺少 controlURL");
+  if (!controlPath) throw new Error("AVTransport \u670d\u52a1\u7f3a\u5c11 controlURL");
   const urlBase = xmlValue(xml, "URLBase");
   const base = urlBase ? new URL(urlBase, location).href : location;
   const controlURL = new URL(controlPath, base).href;
-  const name = xmlValue(xml, "friendlyName") || "DLNA 设备";
+  const name = xmlValue(xml, "friendlyName") || "DLNA \u8bbe\u5907";
   const udn = xmlValue(xml, "UDN");
   return { id: udn || controlURL, name, location, controlURL, host: new URL(controlURL).host };
 }
@@ -486,7 +483,7 @@ function buildSeekEnvelope(seconds) {
 }
 
 async function seekOverHttp(device, seconds) {
-  if (!device?.controlURL) throw new Error("设备缺少 AVTransport 控制地址");
+  if (!device?.controlURL) throw new Error("\u8bbe\u5907\u7f3a\u5c11 AVTransport \u63a7\u5236\u5730\u5740");
   const response = await fetch(device.controlURL, {
     method: "POST",
     headers: { "Content-Type": 'text/xml; charset="utf-8"', SOAPACTION: '"urn:schemas-upnp-org:service:AVTransport:1#Seek"' },
@@ -496,7 +493,7 @@ async function seekOverHttp(device, seconds) {
 }
 
 async function castOverHttp(device, item, headers = {}) {
-  if (!device?.controlURL) throw new Error("设备缺少 AVTransport 控制地址");
+  if (!device?.controlURL) throw new Error("\u8bbe\u5907\u7f3a\u5c11 AVTransport \u63a7\u5236\u5730\u5740");
   const request = async (action, body) => {
     const response = await fetch(device.controlURL, {
       method: "POST",
@@ -1028,7 +1025,9 @@ async function enrich(tabId, item) {
     item.status = "ready";
   } catch (error) {
     item.status = "error";
-    item.error = error?.name === "AbortError" ? "元数据读取超时" : error?.message ?? String(error);
+    const errorName = error && error.name;
+    const errorMessage = error && error.message;
+    item.error = errorName === "AbortError" ? "\u5143\u6570\u636e\u8bfb\u53d6\u8d85\u65f6" : (errorMessage || String(error));
   } finally {
     clearTimeout(timeout);
     delete item.loadingStartedAt;
@@ -1036,9 +1035,9 @@ async function enrich(tabId, item) {
 }
 
 async function nativeDlna(message) {
-  if (!api.runtime.sendNativeMessage) throw new Error("当前浏览器没有可用的 DLNA 原生桥接");
+  if (!api.runtime.sendNativeMessage) throw new Error("\u5f53\u524d\u6d4f\u89c8\u5668\u6ca1\u6709\u53ef\u7528\u7684 DLNA \u539f\u751f\u6865\u63a5");
   const response = await api.runtime.sendNativeMessage(NATIVE_APP_ID, { scope: "dlna", ...message });
-  if (!response?.ok) throw new Error(response?.error || "DLNA 原生操作失败");
+  if (!response || !response.ok) throw new Error((response && response.error) || "DLNA \u539f\u751f\u64cd\u4f5c\u5931\u8d25");
   return response;
 }
 
@@ -1055,15 +1054,15 @@ async function saveDevices(devices, selectedId) {
 
 async function resolveManualDevice(input) {
   const address = input.controlURL?.trim();
-  if (!address) throw new Error("请输入设备描述地址或 AVTransport Control URL");
+  if (!address) throw new Error("\u8bf7\u8f93\u5165\u8bbe\u5907\u63cf\u8ff0\u5730\u5740\u6216 AVTransport Control URL");
   let parsed;
-  try { parsed = new URL(address); } catch { throw new Error("设备地址格式不正确"); }
+  try { parsed = new URL(address); } catch { throw new Error("\u8bbe\u5907\u5730\u5740\u683c\u5f0f\u4e0d\u6b63\u786e"); }
   const looksLikeDescription = /\.xml$/i.test(parsed.pathname) || /(?:description|desc|device)/i.test(parsed.pathname);
   if (!looksLikeDescription) {
     return { ...input, id: input.id || createId(), controlURL: parsed.href, host: parsed.host, manual: true };
   }
   const response = await fetch(parsed.href, { cache: "no-store" });
-  if (!response.ok) throw new Error("读取设备描述失败，HTTP " + response.status);
+  if (!response.ok) throw new Error("\u8bfb\u53d6\u8bbe\u5907\u63cf\u8ff0\u5931\u8d25\uff0cHTTP " + response.status);
   const resolved = parseDlnaDescription(await response.text(), parsed.href);
   return { ...resolved, name: input.name?.trim() || resolved.name, manual: true };
 }
@@ -1089,8 +1088,8 @@ async function castDlna(message) {
   const settings = await getDlnaSettings();
   const device = settings.dlnaDevices.find((candidate) => candidate.id === message.deviceId);
   const item = [...storeFor(message.tabId).values()].find((candidate) => candidate.id === message.mediaId);
-  if (!device) throw new Error("请选择一个 DLNA 设备");
-  if (!item) throw new Error("视频地址已失效，请重新检测");
+  if (!device) throw new Error("\u8bf7\u9009\u62e9\u4e00\u4e2a DLNA \u8bbe\u5907");
+  if (!item) throw new Error("\u89c6\u9891\u5730\u5740\u5df2\u5931\u6548\uff0c\u8bf7\u91cd\u65b0\u68c0\u6d4b");
   const tabItems = [...storeFor(message.tabId).values()];
   const nearestTrack = (track) => tabItems
     .filter((candidate) => candidate.id !== item.id && candidate.mediaTrack === track && candidate.kind === item.kind)
@@ -1147,7 +1146,7 @@ async function getDlnaPosition(tabId) {
 
 async function seekDlna(tabId, rawPosition) {
   const position = Number(rawPosition);
-  if (!Number.isFinite(position) || position < 0) throw new Error("快进时间无效");
+  if (!Number.isFinite(position) || position < 0) throw new Error("\u5feb\u8fdb\u65f6\u95f4\u65e0\u6548");
   const settings = await getDlnaSettings();
   const session = settings.dlnaAutoCastSessions?.[String(tabId)];
   if (!session?.deviceId || session.pageUrl !== (pageUrlByTab.get(tabId) ?? "")) return { active: false };

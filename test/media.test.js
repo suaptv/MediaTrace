@@ -5,6 +5,7 @@ import { classifyUrl, formatDuration, inferM4sTrack, inferTencentM3u8, inferYouT
 test("classifies media using URL and content type", () => {
   assert.equal(classifyUrl("https://cdn.test/video.MP4?token=x"), "mp4");
   assert.equal(classifyUrl("https://v26-web.douyinvod.com/media-video-avc1/?mime_type=video_mp4"), "mp4");
+  assert.equal(classifyUrl("https://www.douyin.com/aweme/v1/play/?video_id=test"), "mp4");
   assert.equal(classifyUrl("https://cdn.test/play?id=1", "application/vnd.apple.mpegurl"), "m3u8");
   assert.equal(classifyUrl("https://cdn.test/live/03_video.ts?token=x"), "stream");
   assert.equal(classifyUrl("https://live.test/channel.flv?token=x"), "flv");

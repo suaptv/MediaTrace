@@ -7,7 +7,7 @@
 <p align="center"><strong>简体中文</strong> · <a href="README_EN.md">English</a></p>
 
 <p align="center">
-  在 Safari 与 Chrome 中发现当前网页的视频地址，并投屏到局域网 DLNA 设备。
+  在 Safari、Chrome 与 Microsoft Edge 中发现当前网页的视频地址，并投屏到局域网 DLNA 设备。
 </p>
 
 <p align="center">
@@ -36,6 +36,8 @@ flowchart LR
 | macOS Safari | macOS 12.3 或更高版本、Xcode |
 | iPhone / iPad Safari | iOS / iPadOS 15.4 或更高版本、Xcode |
 | macOS Chrome | Chrome；使用 DLNA 时还需要安装本地服务 |
+| macOS Microsoft Edge | Edge；使用 DLNA 时还需要安装同一个本地服务 |
+| Windows Chrome / Edge | Windows 10/11；媒体检测可直接使用，DLNA 需要 .NET 8 SDK 和 Windows Native Host |
 
 > **Safari 安装必须签名：** macOS、iOS 和 iPadOS 版本都由宿主 App 与 Safari Extension 组成。两个 Target 必须选择同一个有效 Apple Developer Team，并成功签名后，系统才会安装和显示扩展。仅完成编译但没有有效签名时，Safari 设置中可能完全看不到 MediaTrace。
 
@@ -56,6 +58,18 @@ flowchart LR
 
 以后修改插件代码，只需回到 `chrome://extensions`，点击 MediaTrace 的“重新加载”。
 
+### Microsoft Edge 安装
+
+Edge 直接使用同一个扩展文件夹和构建产物，无需维护另一个版本：
+
+1. 在 Edge 地址栏打开 `edge://extensions`；
+2. 打开“开发人员模式”；
+3. 点击“加载解压缩的扩展”；
+4. 选择 `~/Desktop/MediaTrace`；
+5. 将 MediaTrace 固定到 Edge 工具栏。
+
+修改代码后，在 `edge://extensions` 点击“重新加载”。`npm run build:edge` 与 `npm run build:chrome` 会生成同一个兼容 Chromium 的 CRX。
+
 ### 2. 安装并签名 SSDP 本地服务
 
 Chrome 扩展自身不能发送 SSDP UDP 多播。如果需要搜索电视或其他 DLNA 设备，必须在这台 Mac 上安装一次 Native Messaging Host。
@@ -64,6 +78,12 @@ Chrome 在 macOS 上读取用户级 Native Messaging Host 的目录是：
 
 ```text
 ~/Library/Application Support/Google/Chrome/NativeMessagingHosts/
+```
+
+Microsoft Edge 对应目录是：
+
+```text
+~/Library/Application Support/Microsoft Edge/NativeMessagingHosts/
 ```
 
 MediaTrace 默认生成的注册文件是：
@@ -109,7 +129,7 @@ MEDIATRACE_CODESIGN_IDENTITY="Developer ID Application: Example Name (TEAMID)" \
 
 使用 Apple 签发的身份后，`codesign` 输出应包含 Team Identifier，macOS 能更稳定地记录 Native Host 的“本地网络”权限。
 
-确认输入后，脚本会同步更新 `src/background.js` 和项目内 `native-host/Info.plist`，生成同名的 Chrome Host JSON，再执行编译与签名。安装后需要在 `chrome://extensions` 重新加载插件，并完全重启 Chrome。
+确认输入后，脚本会同步更新 `src/background.js` 和项目内 `native-host/Info.plist`，同时生成 Chrome 与 Edge 的 Host JSON，再执行编译与签名。安装后需要重新加载插件，并完全重启正在使用的浏览器。
 
 这两个命令会自动完成：
 
@@ -146,6 +166,40 @@ codesign --verify --deep --strict --verbose=2 \
 没有错误输出就表示签名验证成功。
 
 > `mediatrace.pem` 是私钥，请勿发送给别人、上传到公开仓库或删除。删除它后重新打包会改变扩展 ID，需要重新安装 Native Host。
+
+### Windows Chrome / Edge 安装
+
+1. 仅使用媒体检测和复制地址时，直接在 `chrome://extensions` 或 `edge://extensions` 加载项目根目录即可；
+2. 如需 DLNA 搜索、投屏、进度同步和快进同步，先安装 [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)；
+3. 在项目目录打开 PowerShell，执行：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\install-windows-native-host.ps1
+```
+
+脚本会自动完成：
+
+- 检测本机已安装的 Chrome 和 Edge，只为实际存在的浏览器写入 Native Messaging 注册；
+- 根据系统架构生成 `win-x64` 或 `win-arm64` 单文件 Native Host；
+- 生成或复用 `%LOCALAPPDATA%\MediaTrace\mediatrace.pem`，自动把固定公钥写入 `manifest.json`；
+- 扫描 Chrome 与 Edge 各个 Profile 中加载的 MediaTrace 扩展 ID；
+- 生成 `%LOCALAPPDATA%\MediaTrace\NativeHost\app.mediatrace.json`；
+- 如果安装了 Chrome，注册 `HKCU\Software\Google\Chrome\NativeMessagingHosts`；
+- 如果安装了 Edge，注册 `HKCU\Software\Microsoft\Edge\NativeMessagingHosts`。
+
+脚本不依赖浏览器必须先写入扩展 ID；即使扫描不到，也会根据本地身份密钥自动生成固定 ID。如果希望同时保留某个旧 ID，也可以明确传入：
+
+```powershell
+.\scripts\install-windows-native-host.ps1 -ExtensionId abcdefghijklmnopabcdefghijklmnop
+```
+
+首次执行脚本后，`manifest.json` 会获得固定公钥。如果 MediaTrace 此前已经加载，请在扩展管理页面删除旧版本，再重新“加载解压缩的扩展”，确保浏览器采用脚本输出的固定 ID。然后完全退出并重新打开 Chrome/Edge。Windows 防火墙首次询问时允许当前专用网络访问，否则可能无法收到 SSDP 设备响应。卸载命令：
+
+```powershell
+.\scripts\uninstall-windows-native-host.ps1
+```
+
+Windows 版本支持 SSDP、DLNA 投屏、自定义请求头、电视进度读取和 `REL_TIME` 快进。AirPlay `.local` 地址发现仅在 Apple 平台提供。
 
 ## Safari 安装
 
@@ -241,7 +295,7 @@ AirPlay 仅作为手动添加 DLNA 设备时的地址查找助手。在“手动
 | --- | --- |
 | iOS / iPadOS Safari | App 与 Extension 必须有效签名；还需要向 Apple 申请并获批 `Multicast Networking` 能力，App ID 和 Provisioning Profile 必须实际包含对应 entitlement；同时允许“本地网络”权限。 |
 | macOS Safari | App 与 Extension 必须使用同一个有效 Team 正确签名；macOS 不要求 iOS 的受限 Multicast entitlement，但仍需允许“本地网络”访问。 |
-| macOS Chrome | Swift Native Host 必须完成编译、签名和 Native Messaging 注册；扩展 ID 必须在白名单中，并且 Google Chrome 需要获得“本地网络”权限。 |
+| macOS Chrome / Edge | Swift Native Host 必须完成编译、签名和 Native Messaging 注册；扩展 ID 必须在白名单中，并且当前浏览器需要获得“本地网络”权限。 |
 
 仅在 Xcode 工程中写入 entitlement 不代表 iOS 已获得权限。没有 Apple 批准、签名不匹配或 Provisioning Profile 不包含能力时，SSDP 可能返回 `errno 65`、网络不可达或搜索不到设备。
 

@@ -14,6 +14,8 @@ if [ ! -f "$PROJECT_DIR/manifest.json" ]; then
   exit 1
 fi
 
+node "$PROJECT_DIR/scripts/prepare-chromium-background.mjs"
+
 if [ -n "${MEDIATRACE_CHROME_BIN:-}" ]; then
   CHROME_BIN="$MEDIATRACE_CHROME_BIN"
 elif [ -x "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" ]; then
@@ -22,8 +24,10 @@ elif [ -x "/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome C
   CHROME_BIN="/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary"
 elif [ -x "/Applications/Chromium.app/Contents/MacOS/Chromium" ]; then
   CHROME_BIN="/Applications/Chromium.app/Contents/MacOS/Chromium"
+elif [ -x "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge" ]; then
+  CHROME_BIN="/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge"
 else
-  echo "Error: Google Chrome or Chromium was not found in /Applications." >&2
+  echo "Error: Google Chrome, Microsoft Edge, or Chromium was not found in /Applications." >&2
   echo "Set MEDIATRACE_CHROME_BIN to the browser executable path and retry." >&2
   exit 1
 fi

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "MediaTrace",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "发现当前网页中的 M3U8 与 MP4 地址，并读取媒体时长。",
   "icons": {
     "16": "assets/icons/icon-16.png",
@@ -38,6 +38,27 @@
   "content_scripts": [
     {
       "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "src/content.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": true
+    },
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "src/adapters/traffic-main.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN",
+      "all_frames": true
+    },
+    {
+      "matches": [
         "https://*.douyu.com/*"
       ],
       "js": [
@@ -46,16 +67,6 @@
       "run_at": "document_start",
       "world": "MAIN",
       "all_frames": false
-    },
-    {
-      "matches": [
-        "<all_urls>"
-      ],
-      "js": [
-        "src/content.js"
-      ],
-      "run_at": "document_start",
-      "all_frames": true
     }
   ]
 }

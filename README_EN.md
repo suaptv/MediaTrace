@@ -7,7 +7,7 @@
 <p align="center"><a href="README.md">简体中文</a> · <strong>English</strong></p>
 
 <p align="center">
-  Discover media URLs on the current webpage in Safari and Chrome, then cast them to a DLNA device on your local network.
+  Discover media URLs on the current webpage in Safari, Chrome, and Microsoft Edge, then cast them to a DLNA device on your local network.
 </p>
 
 <p align="center">
@@ -36,6 +36,8 @@ flowchart LR
 | Safari on macOS | macOS 12.3 or later and Xcode |
 | Safari on iPhone/iPad | iOS/iPadOS 15.4 or later and Xcode |
 | Chrome on macOS | Chrome; the local native service is also required for DLNA discovery |
+| Microsoft Edge on macOS | Edge; the same local native service is required for DLNA discovery |
+| Chrome / Edge on Windows | Windows 10/11; detection works directly, while DLNA requires the .NET 8 SDK and Windows Native Host |
 
 > **Safari builds must be signed.** The macOS, iOS, and iPadOS versions consist of a host app and a Safari Extension. Both targets must use the same valid Apple Developer Team and must be signed successfully before the system can install and display the extension. A compiled but unsigned build may not appear in Safari Settings at all.
 
@@ -56,6 +58,18 @@ flowchart LR
 
 After changing the extension code, return to `chrome://extensions` and click **Reload** on the MediaTrace card.
 
+### Install on Microsoft Edge
+
+Edge uses the same extension folder and build artifact; no separate codebase is required:
+
+1. Open `edge://extensions`;
+2. Enable **Developer mode**;
+3. Click **Load unpacked**;
+4. Select `~/Desktop/MediaTrace`;
+5. Pin MediaTrace to the Edge toolbar.
+
+After changing code, click **Reload** at `edge://extensions`. `npm run build:edge` and `npm run build:chrome` produce the same Chromium-compatible CRX.
+
 ### 2. Install and sign the SSDP native service
 
 A Chrome extension cannot send SSDP UDP multicast packets by itself. To discover TVs and other DLNA devices, install the Native Messaging Host once on the Mac.
@@ -64,6 +78,12 @@ Chrome reads user-level Native Messaging Host registrations from:
 
 ```text
 ~/Library/Application Support/Google/Chrome/NativeMessagingHosts/
+```
+
+Microsoft Edge reads the corresponding registration from:
+
+```text
+~/Library/Application Support/Microsoft Edge/NativeMessagingHosts/
 ```
 
 MediaTrace creates this registration file by default:
@@ -109,7 +129,7 @@ MEDIATRACE_CODESIGN_IDENTITY="Developer ID Application: Example Name (TEAMID)" \
 
 With an Apple-issued identity, `codesign` should report a Team Identifier, allowing macOS to retain local-network permission for the Native Host more reliably.
 
-After confirmation, the script synchronizes `src/background.js` and `native-host/Info.plist`, generates the matching Chrome host JSON, then builds and signs the native app. Reload the extension at `chrome://extensions` and fully restart Chrome afterward.
+After confirmation, the script synchronizes `src/background.js` and `native-host/Info.plist`, creates matching host JSON files for Chrome and Edge, then builds and signs the native app. Reload the extension and fully restart the browser afterward.
 
 The build and installer commands automatically:
 
@@ -146,6 +166,40 @@ codesign --verify --deep --strict --verbose=2 \
 No output means signature verification succeeded.
 
 > `mediatrace.pem` is a private key. Never share it, commit it to a public repository, or delete it. Repackaging after deleting the key changes the extension ID and requires reinstalling the Native Host.
+
+### Install on Windows Chrome / Edge
+
+1. For media detection and URL copying only, load the project root directly from `chrome://extensions` or `edge://extensions`;
+2. For DLNA discovery, casting, position synchronization, and seeking, install the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0);
+3. Open PowerShell in the project directory and run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\install-windows-native-host.ps1
+```
+
+The installer automatically:
+
+- Detects installed Chrome and Edge browsers and writes Native Messaging registration only for browsers that are actually present;
+- Publishes a single-file `win-x64` or `win-arm64` Native Host;
+- Generates or reuses `%LOCALAPPDATA%\MediaTrace\mediatrace.pem` and writes its stable public key to `manifest.json`;
+- Finds MediaTrace IDs loaded in every Chrome and Edge profile;
+- Creates `%LOCALAPPDATA%\MediaTrace\NativeHost\app.mediatrace.json`;
+- Registers `HKCU\Software\Google\Chrome\NativeMessagingHosts` when Chrome is installed;
+- Registers `HKCU\Software\Microsoft\Edge\NativeMessagingHosts` when Edge is installed.
+
+The installer no longer requires the browser to flush an extension ID first. It always derives a stable ID from the local identity key. To retain an older ID as an additional allowed origin, pass it explicitly:
+
+```powershell
+.\scripts\install-windows-native-host.ps1 -ExtensionId abcdefghijklmnopabcdefghijklmnop
+```
+
+On the first run, the installer adds a stable public key to `manifest.json`. If MediaTrace was already loaded, remove the old entry from the extensions page and load the unpacked folder again so the browser uses the printed stable ID. Then fully quit and reopen Chrome/Edge. Allow private-network access when Windows Firewall prompts, or SSDP responses may be blocked. To uninstall:
+
+```powershell
+.\scripts\uninstall-windows-native-host.ps1
+```
+
+The Windows host supports SSDP, DLNA casting, custom request headers, TV position reads, and `REL_TIME` seeking. AirPlay `.local` discovery remains Apple-only.
 
 ## Installing on Safari
 
@@ -241,7 +295,7 @@ If the device's IPv4 address changes, Apple systems can resolve the `.local` hos
 | --- | --- |
 | iOS/iPadOS Safari | The app and extension must be signed correctly. Apple must approve the restricted `Multicast Networking` capability, and the App ID and provisioning profile must contain the entitlement. Local Network access must also be granted. |
 | macOS Safari | The app and extension must be signed with the same valid Team. macOS does not require the restricted iOS multicast entitlement, but Local Network access is still required. |
-| macOS Chrome | The Swift Native Host must be compiled, signed, and registered. The extension ID must be allowed, and Google Chrome must have Local Network permission. |
+| macOS Chrome / Edge | The Swift Native Host must be compiled, signed, and registered. The extension ID must be allowed, and the current browser must have Local Network permission. |
 
 Adding an entitlement only to the Xcode project does not mean Apple has granted it on iOS. Without Apple approval, a matching signature, and a provisioning profile containing the capability, SSDP may return `errno 65`, report that the network is unreachable, or discover no devices.
 

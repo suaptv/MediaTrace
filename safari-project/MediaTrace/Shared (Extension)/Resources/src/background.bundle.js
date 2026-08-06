@@ -1,7 +1,4 @@
-// Safari 15.4+ Manifest V3 background bundle (generated)
-// macOS uses webRequest; iOS/iPadOS use content-script traffic observation.
-const mediatraceIOS = /iPhone|iPad|iPod/.test(navigator.platform) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-globalThis.MEDIATRACE_WEB_REQUEST_ENABLED = !mediatraceIOS;
+// Generated Chromium Manifest V3 background bundle. Do not edit directly.
 const HEAD_BYTES = 1024 * 1024;
 // FLV onMetaData normally lives in the first script tag. Reading 64 KiB is
 // enough for the header and metadata without keeping a live response open.

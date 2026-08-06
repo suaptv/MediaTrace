@@ -171,7 +171,10 @@ function enqueueTabOperation(tabId, operation) {
 }
 
 function headersToObject(headers = []) {
-  return Object.fromEntries(headers.map(({ name, value }) => [name, value ?? ""]));
+  // Chromium may preserve response-header casing on Windows (Content-Type),
+  // while Safari commonly returns lowercase names. Normalize here so
+  // extensionless media can always be classified from its MIME type.
+  return Object.fromEntries(headers.map(({ name, value }) => [String(name).toLowerCase(), value ?? ""]));
 }
 
 function requestPageOrigin(details) {
@@ -517,7 +520,9 @@ async function enrich(tabId, item) {
     item.status = "ready";
   } catch (error) {
     item.status = "error";
-    item.error = error?.name === "AbortError" ? "元数据读取超时" : error?.message ?? String(error);
+    const errorName = error && error.name;
+    const errorMessage = error && error.message;
+    item.error = errorName === "AbortError" ? "元数据读取超时" : (errorMessage || String(error));
   } finally {
     clearTimeout(timeout);
     delete item.loadingStartedAt;
@@ -527,7 +532,7 @@ async function enrich(tabId, item) {
 async function nativeDlna(message) {
   if (!api.runtime.sendNativeMessage) throw new Error("当前浏览器没有可用的 DLNA 原生桥接");
   const response = await api.runtime.sendNativeMessage(NATIVE_APP_ID, { scope: "dlna", ...message });
-  if (!response?.ok) throw new Error(response?.error || "DLNA 原生操作失败");
+  if (!response || !response.ok) throw new Error((response && response.error) || "DLNA 原生操作失败");
   return response;
 }
 
@@ -552,7 +557,7 @@ async function resolveManualDevice(input) {
     return { ...input, id: input.id || createId(), controlURL: parsed.href, host: parsed.host, manual: true };
   }
   const response = await fetch(parsed.href, { cache: "no-store" });
-  if (!response.ok) throw new Error(`读取设备描述失败（HTTP ${response.status}）`);
+  if (!response.ok) throw new Error("读取设备描述失败，HTTP " + response.status);
   const resolved = parseDlnaDescription(await response.text(), parsed.href);
   return { ...resolved, name: input.name?.trim() || resolved.name, manual: true };
 }

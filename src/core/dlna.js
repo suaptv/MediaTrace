@@ -118,7 +118,7 @@ export async function seekOverHttp(device, seconds) {
     headers: { "Content-Type": 'text/xml; charset="utf-8"', SOAPACTION: '"urn:schemas-upnp-org:service:AVTransport:1#Seek"' },
     body: buildSeekEnvelope(seconds)
   });
-  if (!response.ok) throw new Error(`DLNA Seek 失败（HTTP ${response.status}）`);
+  if (!response.ok) throw new Error("DLNA Seek failed, HTTP " + response.status);
 }
 
 export async function castOverHttp(device, item, headers = {}) {
@@ -126,10 +126,10 @@ export async function castOverHttp(device, item, headers = {}) {
   const request = async (action, body) => {
     const response = await fetch(device.controlURL, {
       method: "POST",
-      headers: { "Content-Type": 'text/xml; charset="utf-8"', SOAPACTION: `"urn:schemas-upnp-org:service:AVTransport:1#${action}"` },
+      headers: { "Content-Type": 'text/xml; charset="utf-8"', SOAPACTION: '"urn:schemas-upnp-org:service:AVTransport:1#' + action + '"' },
       body
     });
-    if (!response.ok) throw new Error(`DLNA ${action} 失败（HTTP ${response.status}）`);
+    if (!response.ok) throw new Error("DLNA " + action + " failed, HTTP " + response.status);
   };
   await request("SetAVTransportURI", buildSetUriEnvelope(item, headers));
   await request("Play", buildPlayEnvelope());

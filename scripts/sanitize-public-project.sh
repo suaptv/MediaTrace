@@ -27,6 +27,7 @@ node -e '
   const source = fs.readFileSync(file, "utf8");
   fs.writeFileSync(file, source.replace(/const NATIVE_APP_ID = "[^"]+";/, "const NATIVE_APP_ID = \"app.mediatrace\";"));
 ' "$PROJECT_DIR/src/background.js"
+node "$PROJECT_DIR/scripts/prepare-chromium-background.mjs"
 node -e '
   const fs = require("fs"), file = process.argv[1];
   const manifest = JSON.parse(fs.readFileSync(file, "utf8"));

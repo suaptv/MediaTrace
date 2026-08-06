@@ -67,10 +67,17 @@
     if (!rawUrl) return;
     let url;
     try { url = new URL(rawUrl, location.href).href; } catch { return; }
-    let youtubeMedia = false;
-    try { const parsed = new URL(url); youtubeMedia = /(?:^|\.)googlevideo\.com$/i.test(parsed.hostname) && parsed.pathname.endsWith("/videoplayback"); } catch { /* invalid URL */ }
+    let youtubeMedia = false; let declaredByUrl = false; let douyinPlay = false;
+    try {
+      const parsed = new URL(url);
+      youtubeMedia = /(?:^|\.)googlevideo\.com$/i.test(parsed.hostname) && parsed.pathname.endsWith("/videoplayback");
+      const mime = (parsed.searchParams.get("mime_type") ?? parsed.searchParams.get("mime") ?? "").toLowerCase();
+      declaredByUrl = mime === "video_mp4" || mime.startsWith("video/mp4") || mime.includes("mpegurl");
+      douyinPlay = /\/aweme\/v1\/play\/?$/i.test(parsed.pathname) && /(?:^|\.)(?:douyin|iesdouyin|amemv|snssdk)\.com$/i.test(parsed.hostname);
+    } catch { /* invalid URL */ }
     const declaredMedia = /mpegurl|video\/mp4|video\/x-flv/i.test(contentType);
-    if (seen.has(url) || !youtubeMedia && !declaredMedia && !(/\.(?:m3u8|mp4|flv|ts|m4s|cmfv|cmfa)(?:$|[?#])/i.test(url))) return;
+    if (url.startsWith("blob:") || url.startsWith("data:")) return;
+    if (seen.has(url) || !youtubeMedia && !declaredMedia && !declaredByUrl && !douyinPlay && !(/\.(?:m3u8|mp4|flv|ts|m4s|cmfv|cmfa)(?:$|[?#])/i.test(url))) return;
     seen.add(url);
     try {
       const pending = api.runtime.sendMessage({ type: "DISCOVERED_URL", url, source, contentType });
@@ -78,7 +85,15 @@
     } catch { /* extension context may have been invalidated */ }
   }
   function scan(root = document) {
-    root.querySelectorAll?.("video[src], video source[src], a[href]").forEach((node) => report(node.src || node.href));
+    root.querySelectorAll?.("video").forEach((video) => { report(video.currentSrc, "video-current-src"); report(video.src, "video-src"); });
+    root.querySelectorAll?.("video source[src], a[href]").forEach((node) => report(node.src || node.href));
+  }
+  function reportPlayingVideo(event) {
+    const video = event.target;
+    if (!(video instanceof HTMLVideoElement)) return;
+    report(video.currentSrc, "video-current-src");
+    report(video.src, "video-src");
+    performance.getEntriesByType?.("resource").forEach((entry) => report(entry.name, "performance-playing"));
   }
   function observeNavigation() {
     if (window !== top) return;
@@ -165,8 +180,12 @@
     return undefined;
   });
   addEventListener("message", (event) => {
-    if (event.source !== window || event.data?.type !== "MEDIATRACE_DOUYU_MEDIA") return;
-    report(event.data.url, "douyu-player", event.data.contentType ?? "");
+    if (event.source !== window) return;
+    if (event.data?.type === "MEDIATRACE_DOUYU_MEDIA") {
+      report(event.data.url, "douyu-player", event.data.contentType ?? "");
+    } else if (event.data?.type === "MEDIATRACE_NETWORK_URL") {
+      report(event.data.url, event.data.source ?? "page-network", event.data.contentType ?? "");
+    }
   });
   new MutationObserver((mutations) => mutations.forEach((m) => {
     m.addedNodes.forEach((node) => { if (node.nodeType === 1) { report(node.src || node.href); scan(node); if (node.tagName === "SCRIPT" || node.querySelector?.("script")) scheduleBilibiliDashScan(); } });
@@ -174,6 +193,7 @@
   })).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ["src", "href"] });
   observeNavigation();
   observeTraffic();
+  for (const eventName of ["loadedmetadata", "play", "playing"]) document.addEventListener(eventName, reportPlayingVideo, true);
   scheduleBilibiliDashScan();
   setInterval(syncDlnaPosition, 4000);
   document.addEventListener("seeked", forwardWebSeek, true);

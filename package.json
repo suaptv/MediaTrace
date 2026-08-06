@@ -1,12 +1,16 @@
 {
   "name": "mediatrace-extension",
-  "version": "1.0.0",
+  "version": "1.0.5",
   "private": true,
   "type": "module",
   "scripts": {
     "test": "node --test",
+    "build:chromium-background": "node ./scripts/prepare-chromium-background.mjs",
     "build:chrome": "./scripts/build-chrome-crx.sh",
+    "build:edge": "./scripts/build-chrome-crx.sh",
     "install:chrome-host": "./scripts/install-chrome-native-host.sh",
-    "uninstall:chrome-host": "./scripts/uninstall-chrome-native-host.sh"
+    "install:edge-host": "./scripts/install-chrome-native-host.sh",
+    "uninstall:chrome-host": "./scripts/uninstall-chrome-native-host.sh",
+    "uninstall:edge-host": "./scripts/uninstall-chrome-native-host.sh"
   }
 }

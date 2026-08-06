@@ -17,6 +17,10 @@ export function classifyUrl(rawUrl, contentType = "") {
   if (/\.m4s$/i.test(pathname)) return "m4s";
   if (/\.m3u8(?:$|\?)/i.test(rawUrl) || type.includes("mpegurl")) return "m3u8";
   if (/\.mp4$/i.test(pathname) || type.includes("video/mp4") || declaredMime === "video_mp4" || declaredMime.startsWith("video/mp4")) return "mp4";
+  // Douyin mobile playback often uses an extensionless redirect endpoint.
+  // iOS Safari has no webRequest access, so the content script must be able to
+  // report this URL based on the playback route itself.
+  if (/\/aweme\/v1\/play\/?$/i.test(pathname) && /(?:^|\.)(?:douyin|iesdouyin|amemv|snssdk)\.com$/i.test(hostname)) return "mp4";
   if (/\.flv$/i.test(pathname) || type.includes("video/x-flv")) return "flv";
   if (/\.(?:ts|cmfv|cmfa)$/i.test(pathname) || type.includes("video/mp2t") || type.includes("iso.segment")) return "stream";
   return null;
@@ -77,7 +81,7 @@ function readAmf0(view, state, limit) {
     return Array.from({ length: count }, () => readAmf0(view, state, limit));
   }
   if (type === 11) { const value = new Date(view.getFloat64(state.offset)); state.offset += 10; return value; }
-  throw new Error(`Unsupported AMF type ${type}`);
+  throw new Error("Unsupported AMF type " + type);
 }
 
 export function parseFlvMetadata(buffer) {
@@ -108,7 +112,7 @@ async function fetchLimited(url, byteLimit, signal, options = {}) {
   const response = await fetch(url, {
     headers: { Range: `bytes=0-${byteLimit - 1}` }, credentials: "include", cache: "no-store", signal
   });
-  if (!(response.ok || response.status === 206)) throw new Error(`HTTP ${response.status}`);
+  if (!(response.ok || response.status === 206)) throw new Error("HTTP " + response.status);
   if (!response.body) return (await response.arrayBuffer()).slice(0, byteLimit);
   const reader = response.body.getReader();
   const chunks = []; let total = 0;
@@ -252,7 +256,7 @@ export function parseM3u8(text, baseUrl) {
 
 async function fetchText(url, signal) {
   const response = await fetch(url, { signal, credentials: "include", cache: "no-store" });
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  if (!response.ok) throw new Error("HTTP " + response.status);
   return response.text();
 }
 
@@ -340,7 +344,7 @@ async function fetchRange(url, range, signal, options = {}) {
   const response = await fetch(url, {
     headers: { Range: range }, credentials: "include", cache: "no-store", signal
   });
-  if (!(response.ok || response.status === 206)) throw new Error(`HTTP ${response.status}`);
+  if (!(response.ok || response.status === 206)) throw new Error("HTTP " + response.status);
   const buffer = await response.arrayBuffer();
   return { buffer, partial: response.status === 206 };
 }
