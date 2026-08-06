@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  支持 M3U8 · MP4 · FLV · M4S · 网页媒体分片 · DLNA 投屏
+  支持 M3U8 · MP4 · FLV · M4S · 网页媒体分片 · 使用DLNA协议将网页中视频地址推送到电视 
 </p>
 
 ---
