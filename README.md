@@ -7,11 +7,11 @@
 <p align="center"><strong>简体中文</strong> · <a href="README_EN.md">English</a></p>
 
 <p align="center">
-  在 Safari、Chrome 与 Microsoft Edge 中发现当前网页的视频地址，并投屏到局域网 DLNA 设备。
+  在 Safari、Chrome 与 Microsoft Edge 中发现当前网页的视频地址，并推送到局域网 DLNA 设备(比如电视)。
 </p>
 
 <p align="center">
-  支持 M3U8 · MP4 · FLV · M4S · 网页媒体分片 · DLNA 投屏
+  支持 M3U8 · MP4 · FLV · M4S · 网页媒体分片 · 使用DLNA协议将网页中视频地址推送到电视 
 </p>
 
 ---
