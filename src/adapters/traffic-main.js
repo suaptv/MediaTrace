@@ -9,6 +9,27 @@
     } catch { /* malformed or unsupported URL */ }
   };
 
+  // Bilibili also exposes the resolved DASH payload as a runtime variable.
+  // The regular content script runs in an isolated world, so forward it from
+  // the page's MAIN world and let the existing DASH merger process it.
+  let lastBilibiliPlayinfoSignature = "";
+  const publishBilibiliPlayinfo = () => {
+    if (!/(?:^|\.)bilibili\.com$/i.test(location.hostname)) return;
+    const playinfo = globalThis.__playinfo__ ?? globalThis.playinfo;
+    if (!playinfo || typeof playinfo !== "object") return;
+    const payload = playinfo.data ?? playinfo;
+    const dash = payload?.dash;
+    const video = Array.isArray(dash?.video) ? dash.video : [];
+    const audio = Array.isArray(dash?.audio) ? dash.audio : [];
+    const signature = [location.href, payload?.quality, payload?.timelength, dash?.duration,
+      video.length, audio.length, video[0]?.baseUrl ?? video[0]?.base_url,
+      audio[0]?.baseUrl ?? audio[0]?.base_url].join("|");
+    if (!video.length && !audio.length || signature === lastBilibiliPlayinfoSignature) return;
+    lastBilibiliPlayinfoSignature = signature;
+    try { postMessage({ type: "MEDIATRACE_BILIBILI_PLAYINFO", data: playinfo }, "*"); }
+    catch { /* the page may be replacing a temporarily non-cloneable value */ }
+  };
+
   const originalFetch = globalThis.fetch;
   if (typeof originalFetch === "function") {
     globalThis.fetch = function (input, init) {
@@ -38,4 +59,7 @@
     }, { once: true });
     return originalSend.apply(this, args);
   };
+
+  publishBilibiliPlayinfo();
+  setInterval(publishBilibiliPlayinfo, 250);
 })();

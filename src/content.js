@@ -3,6 +3,7 @@
   const seen = new Set();
   let dashScanTimer;
   let lastBilibiliDashSignature = "";
+  let hasBilibiliRuntimePlayinfo = false;
   const remoteSeekUntil = new WeakMap();
   const webSeekTimers = new WeakMap();
 
@@ -97,6 +98,7 @@
 
   function scanBilibiliDashMetadata() {
     if (!/(?:^|\.)bilibili\.com$/i.test(location.hostname)) return;
+    if (hasBilibiliRuntimePlayinfo) return;
     const results = new Map();
     const qualityLabels = new Map();
     let dashDuration = null;
@@ -127,6 +129,28 @@
     lastBilibiliDashSignature = signature;
     try {
       const pending = api.runtime.sendMessage({ type: "BILIBILI_DASH_METADATA", source, duration: dashDuration, entries: [...results.values()] });
+      if (pending?.catch) pending.catch(() => {});
+    } catch { /* extension context may have been invalidated */ }
+  }
+
+  function publishBilibiliDashData(data, source) {
+    if (!data || typeof data !== "object") return;
+    const results = new Map();
+    const qualityLabels = new Map();
+    collectQualityLabels(data, qualityLabels);
+    collectDashMetadata(data, results);
+    if (!results.size) return;
+    for (const entry of results.values()) entry.qualityLabel = qualityLabels.get(Number(entry.qualityId)) ?? null;
+    const signature = `${source}|${[...results.keys()].sort().join("|")}`;
+    if (signature === lastBilibiliDashSignature) return;
+    lastBilibiliDashSignature = signature;
+    try {
+      const pending = api.runtime.sendMessage({
+        type: "BILIBILI_DASH_METADATA",
+        source,
+        duration: findDashDuration(data),
+        entries: [...results.values()]
+      });
       if (pending?.catch) pending.catch(() => {});
     } catch { /* extension context may have been invalidated */ }
   }
@@ -175,6 +199,7 @@
       currentUrl = location.href;
       seen.clear();
       lastBilibiliDashSignature = "";
+      hasBilibiliRuntimePlayinfo = false;
       scheduleBilibiliDashScan();
       try {
         const pending = api.runtime.sendMessage({ type: "PAGE_NAVIGATED", url: currentUrl });
@@ -258,6 +283,9 @@
       report(event.data.url, "douyu-player", event.data.contentType ?? "");
     } else if (event.data?.type === "MEDIATRACE_NETWORK_URL") {
       report(event.data.url, event.data.source ?? "page-network", event.data.contentType ?? "");
+    } else if (event.data?.type === "MEDIATRACE_BILIBILI_PLAYINFO") {
+      hasBilibiliRuntimePlayinfo = true;
+      publishBilibiliDashData(event.data.data, "window.__playinfo__");
     }
   });
   new MutationObserver((mutations) => mutations.forEach((m) => {

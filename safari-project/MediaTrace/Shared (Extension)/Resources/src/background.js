@@ -1237,7 +1237,7 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const metadata = new Map(entries
       .map((entry) => [String(entry.key).toLowerCase(), entry]));
     bilibiliDashMetadataByTab.set(tabId, metadata);
-    if (message.source === "playurlSSRData") {
+    if (message.source === "playurlSSRData" || message.source === "window.__playinfo__") {
       if (!bilibiliSsrTabs.has(tabId)) {
         bilibiliSsrTabs.add(tabId);
         clearPendingM4s(tabId);
@@ -1249,16 +1249,20 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
         .sort((a, b) => Number(b.bandwidth || 0) - Number(a.bandwidth || 0))[0];
       const codecRank = (entry) => /^avc1/i.test(entry.codecs || "") ? 0
         : /^(?:hvc1|hev1)/i.test(entry.codecs || "") ? 1 : /^av01/i.test(entry.codecs || "") ? 2 : 3;
-      const videosByQuality = new Map();
+      const codecFamily = (entry) => /^avc1/i.test(entry.codecs || "") ? "h264"
+        : /^(?:hvc1|hev1)/i.test(entry.codecs || "") ? "h265"
+          : /^av01/i.test(entry.codecs || "") ? "av1" : String(entry.codecs || "other").toLowerCase();
+      const videosByQualityAndCodec = new Map();
       for (const detail of entries.filter((entry) => entry.mediaTrack === "video" && typeof entry.url === "string")) {
         const qualityKey = Number(detail.qualityId) || `${detail.width}x${detail.height}`;
-        const previous = videosByQuality.get(qualityKey);
-        if (!previous || codecRank(detail) < codecRank(previous)
-          || codecRank(detail) === codecRank(previous) && Number(detail.bandwidth || 0) > Number(previous.bandwidth || 0)) {
-          videosByQuality.set(qualityKey, detail);
+        const variantKey = `${qualityKey}|${codecFamily(detail)}`;
+        const previous = videosByQualityAndCodec.get(variantKey);
+        if (!previous || Number(detail.bandwidth || 0) > Number(previous.bandwidth || 0)) {
+          videosByQualityAndCodec.set(variantKey, detail);
         }
       }
-      const selectedVideos = [...videosByQuality.values()].sort((a, b) => Number(b.qualityId || 0) - Number(a.qualityId || 0));
+      const selectedVideos = [...videosByQualityAndCodec.values()].sort((a, b) =>
+        Number(b.qualityId || 0) - Number(a.qualityId || 0) || codecRank(a) - codecRank(b));
       if (!selectedVideos.length && audio) {
         commitCandidate(tabId, audio.url, "audio/mp4", "bilibili-playurlSSRData", "m4s", {}, true);
         const audioItem = storeFor(tabId).get(audio.url);

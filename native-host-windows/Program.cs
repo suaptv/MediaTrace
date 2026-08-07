@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Headers;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
@@ -9,7 +10,9 @@ using System.Xml.Linq;
 
 static class Program
 {
-    static readonly HttpClient Http = new(new SocketsHttpHandler { AllowAutoRedirect = true }) { Timeout = TimeSpan.FromSeconds(10) };
+    // Renderer descriptions and SOAP endpoints are local-network resources and
+    // must not be sent through a Windows/system HTTP proxy.
+    static readonly HttpClient Http = new(new SocketsHttpHandler { AllowAutoRedirect = true, UseProxy = false }) { Timeout = TimeSpan.FromSeconds(10) };
     static readonly string[] AllowedHeaders = ["referer", "origin", "user-agent", "cookie", "authorization"];
 
     static async Task Main(string[] args)
@@ -62,37 +65,78 @@ static class Program
 
     static async Task<JsonArray> Discover()
     {
+        var locations = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var locationLock = new object();
+        var interfaces = NetworkInterface.GetAllNetworkInterfaces()
+            .Where(adapter => adapter.OperationalStatus == OperationalStatus.Up
+                && adapter.NetworkInterfaceType is not NetworkInterfaceType.Loopback and not NetworkInterfaceType.Tunnel
+                && adapter.SupportsMulticast)
+            .SelectMany(adapter =>
+            {
+                var properties = adapter.GetIPProperties();
+                var index = properties.GetIPv4Properties()?.Index ?? 0;
+                return properties.UnicastAddresses.Select(unicast => new { unicast.Address, Index = index });
+            })
+            .Where(item => item.Index > 0 && item.Address.AddressFamily == AddressFamily.InterNetwork
+                && !IPAddress.IsLoopback(item.Address) && !item.Address.Equals(IPAddress.Any))
+            .GroupBy(item => item.Address)
+            .Select(group => group.First())
+            .ToArray();
+        if (interfaces.Length == 0) throw new Exception("没有可用于 SSDP 搜索的 IPv4 局域网接口");
+
+        await Task.WhenAll(interfaces.Select(async networkInterface =>
+        {
+            try { await DiscoverOnInterface(networkInterface.Address, networkInterface.Index, locations, locationLock); }
+            catch (SocketException) { /* an inactive virtual adapter must not stop Wi-Fi/Ethernet discovery */ }
+        }));
+        var devices = new JsonArray();
+        var loaded = await Task.WhenAll(locations.Select(async location =>
+        {
+            try { return await LoadDevice(location); }
+            catch { return null; /* ignore malformed/non-renderer SSDP responses */ }
+        }));
+        foreach (var device in loaded.Where(device => device is not null)
+            .GroupBy(device => Text(device!, "id"), StringComparer.OrdinalIgnoreCase).Select(group => group.First())) devices.Add(device);
+        return devices;
+    }
+
+    static async Task DiscoverOnInterface(IPAddress localAddress, int interfaceIndex, HashSet<string> locations, object locationLock)
+    {
         using var udp = new UdpClient(AddressFamily.InterNetwork);
         udp.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-        udp.Client.Bind(new IPEndPoint(IPAddress.Any, 0));
+        udp.Client.Bind(new IPEndPoint(localAddress, 0));
+        // Windows accepts an IPv4 interface index in network byte order for
+        // IP_MULTICAST_IF. This is more reliable than relying on route metrics
+        // or passing an address when virtual adapters are installed.
+        udp.Client.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastInterface,
+            IPAddress.HostToNetworkOrder(interfaceIndex));
         udp.Ttl = 2;
+        udp.MulticastLoopback = true;
         var endpoint = new IPEndPoint(IPAddress.Parse("239.255.255.250"), 1900);
-        foreach (var target in new[] { "urn:schemas-upnp-org:device:MediaRenderer:1", "urn:schemas-upnp-org:service:AVTransport:1", "ssdp:all" })
-        {
-            var request = Encoding.ASCII.GetBytes($"M-SEARCH * HTTP/1.1\r\nHOST: 239.255.255.250:1900\r\nMAN: \"ssdp:discover\"\r\nMX: 2\r\nST: {target}\r\n\r\n");
-            await udp.SendAsync(request, endpoint);
-        }
-        var locations = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+        var requests = new[] { "urn:schemas-upnp-org:device:MediaRenderer:1", "urn:schemas-upnp-org:service:AVTransport:1", "ssdp:all" }
+            .Select(target => Encoding.ASCII.GetBytes($"M-SEARCH * HTTP/1.1\r\nHOST: 239.255.255.250:1900\r\nMAN: \"ssdp:discover\"\r\nMX: 2\r\nST: {target}\r\n\r\n"))
+            .ToArray();
+        foreach (var request in requests) await udp.SendAsync(request, endpoint);
+        await Task.Delay(120);
+        foreach (var request in requests) await udp.SendAsync(request, endpoint);
+
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(4));
         while (!timeout.IsCancellationRequested)
         {
             try
             {
                 var packet = await udp.ReceiveAsync(timeout.Token);
                 var response = Encoding.UTF8.GetString(packet.Buffer);
-                foreach (var line in response.Split("\r\n"))
-                    if (line.StartsWith("location:", StringComparison.OrdinalIgnoreCase)) locations.Add(line[(line.IndexOf(':') + 1)..].Trim());
+                foreach (var line in response.Replace("\r\n", "\n").Split('\n'))
+                {
+                    if (!line.StartsWith("location:", StringComparison.OrdinalIgnoreCase)) continue;
+                    var location = line[(line.IndexOf(':') + 1)..].Trim();
+                    if (Uri.TryCreate(location, UriKind.Absolute, out _)) lock (locationLock) locations.Add(location);
+                }
             }
             catch (OperationCanceledException) { break; }
             catch (SocketException) { break; }
         }
-        var devices = new JsonArray();
-        foreach (var location in locations)
-        {
-            try { if (await LoadDevice(location) is JsonObject device) devices.Add(device); }
-            catch { /* ignore malformed/non-renderer SSDP responses */ }
-        }
-        return devices;
     }
 
     static async Task<JsonObject?> LoadDevice(string location)
