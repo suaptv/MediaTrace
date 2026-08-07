@@ -39,12 +39,15 @@ export function inferYouTubeTrack(rawUrl) {
 }
 
 export function inferM4sTrack(rawUrl, contentType = "") {
+  let name = "";
+  try { name = new URL(rawUrl).pathname.toLowerCase(); } catch { return "unknown"; }
+  // Bilibili audio IDs (30216/30232/30280...) are authoritative. Some CDN
+  // nodes incorrectly return video/mp4 for every ISO-BMFF segment.
+  if (/302\d{2}\.m4s$/.test(name)) return "audio";
   const type = contentType.toLowerCase();
   if (type.startsWith("audio/")) return "audio";
   if (type.startsWith("video/")) return "video";
-  let name = "";
-  try { name = new URL(rawUrl).pathname.toLowerCase(); } catch { return "unknown"; }
-  if (/(?:^|[\/_-])audio(?:[\/_-]|\.|$)|302\d{2}\.m4s$/.test(name)) return "audio";
+  if (/(?:^|[\/_-])audio(?:[\/_-]|\.|$)/.test(name)) return "audio";
   if (/(?:^|[\/_-])video(?:[\/_-]|\.|$)|300\d{2}\.m4s$/.test(name)) return "video";
   return "unknown";
 }

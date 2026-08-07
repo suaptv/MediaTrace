@@ -67,9 +67,12 @@ function statusText(item) {
   if (item.status === "error") return `读取失败：${item.error}`;
   if (item.kind === "stream") return `已归组 ${item.segmentCount} 个媒体分片`;
   if (item.kind === "m4s") {
-    const track = item.mediaTrack === "audio" ? "音频轨" : item.mediaTrack === "video" ? "视频轨" : "媒体轨";
-    const resolution = item.resolution?.width > 0 && item.resolution?.height > 0 ? ` · ${item.resolution.width}×${item.resolution.height}` : "";
-    return `B站 DASH · ${track}${resolution}`;
+    const track = item.audioUrl ? "合并" : item.mediaTrack === "audio" ? "音频" : item.mediaTrack === "video" ? "视频" : "M4S";
+    const compactQuality = String(item.qualityLabel || "")
+      .replace(/^真彩\s*/i, "").replace(/^(?:超清|高清|清晰|流畅)\s*/i, "");
+    const quality = compactQuality ? ` · ${compactQuality}` : item.qualityId && item.mediaTrack !== "audio" ? ` · QN${item.qualityId}` : "";
+    const codec = /^avc1/i.test(item.codecs || "") ? " · H.264" : /^(?:hvc1|hev1)/i.test(item.codecs || "") ? " · H.265" : /^av01/i.test(item.codecs || "") ? " · AV1" : /^mp4a/i.test(item.codecs || "") ? " · AAC" : "";
+    return `${track}${quality}${codec}`;
   }
   if (item.kind === "youtube") return `YouTube 点播 · ${item.mediaTrack === "muxed" ? "音视频合并" : item.mediaTrack === "audio" ? "音频轨" : item.mediaTrack === "video" ? "视频轨" : "媒体轨"}`;
   if (item.kind === "flv") return `${item.streamType === "live" ? "直播" : "点播"} · 已读取 ${(item.bytesRead / 1024).toFixed(0)} KB 片头`;

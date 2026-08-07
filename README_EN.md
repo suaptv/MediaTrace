@@ -37,7 +37,7 @@ flowchart LR
 | Safari on iPhone/iPad | iOS/iPadOS 15.4 or later and Xcode |
 | Chrome on macOS | Chrome; the local native service is also required for DLNA discovery |
 | Microsoft Edge on macOS | Edge; the same local native service is required for DLNA discovery |
-| Chrome / Edge on Windows | Windows 10/11; detection works directly, while DLNA requires the .NET 8 SDK and Windows Native Host |
+| Chrome / Edge on Windows | Windows 10 version 1809 or later (Windows 11 recommended); end users installing the Setup package do not need Visual Studio or the .NET SDK |
 
 > **Safari builds must be signed.** The macOS, iOS, and iPadOS versions consist of a host app and a Safari Extension. Both targets must use the same valid Apple Developer Team and must be signed successfully before the system can install and display the extension. A compiled but unsigned build may not appear in Safari Settings at all.
 
@@ -169,8 +169,58 @@ No output means signature verification succeeded.
 
 ### Install on Windows Chrome / Edge
 
+#### End users: one-click Setup package (recommended)
+
+Download the installer matching the computer architecture from Releases:
+
+- Most Intel/AMD computers: `MediaTrace-Setup-version-x64.exe`;
+- Windows on Arm computers: `MediaTrace-Setup-version-arm64.exe`.
+
+The installer deploys the precompiled self-contained Native Host, creates a stable extension ID, registers installed Chrome/Edge browsers, installs the extension files, and opens both the extensions page and the correct `Extension` folder.
+
+End users **do not need Visual Studio, Visual Studio Build Tools, the .NET SDK, or Node.js**.
+
+Chrome/Edge security policy does not allow an off-store extension to be silently enabled by a third-party EXE. Complete this one-time browser step after Setup finishes:
+
+1. Enable **Developer mode** on the extensions page;
+2. Click **Load unpacked**;
+3. Select the `Extension` folder opened by Setup;
+4. Fully quit and reopen the browser.
+
+Allow private-network access if Windows Firewall prompts, or SSDP/DLNA responses may be blocked.
+
+#### Windows build requirements and minimum versions
+
+The following tools are required only by **project maintainers building Setup**, not by end users:
+
+- Minimum OS: 64-bit Windows 10 version 1809 or Windows 11;
+- Minimum shell: Windows PowerShell 5.1;
+- Required toolchain: [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) 8.0.100 or later. The **SDK** is required; installing only the .NET Runtime is not sufficient;
+- Visual Studio is **not required** because the installer builds the Native Host with `dotnet publish`;
+- To open and build the project in Visual Studio, use **Visual Studio 2022 17.8** or later and install the **.NET desktop development** workload, or install the .NET 8 SDK separately;
+- Visual Studio Build Tools are not required by the installer either. If they are installed, `dotnet --version` must still report 8.0.100 or later.
+- Building `MediaTrace-Setup.exe` also requires Node.js 18+ and Inno Setup 6.3+.
+
+Build both installer architectures as a maintainer:
+
+```powershell
+.\scripts\build-windows-installer.ps1 -Architecture x64
+.\scripts\build-windows-installer.ps1 -Architecture arm64
+```
+
+Outputs are written to `dist\windows\`. The **Build Windows Installers** GitHub Actions workflow can also be run manually and runs automatically for `v*` tags.
+
+Verify the environment in PowerShell:
+
+```powershell
+dotnet --version
+$PSVersionTable.PSVersion
+```
+
+If `dotnet` is unavailable or only the Runtime is installed, install the .NET 8 SDK matching the x64 or Arm64 system architecture and reopen PowerShell.
+
 1. For media detection and URL copying only, load the project root directly from `chrome://extensions` or `edge://extensions`;
-2. For DLNA discovery, casting, position synchronization, and seeking, install the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0);
+2. For DLNA discovery, casting, position synchronization, and seeking, install the .NET 8 SDK described above;
 3. Open PowerShell in the project directory and run:
 
 ```powershell

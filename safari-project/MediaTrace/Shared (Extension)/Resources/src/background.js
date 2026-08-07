@@ -43,12 +43,15 @@ function inferYouTubeTrack(rawUrl) {
 }
 
 function inferM4sTrack(rawUrl, contentType = "") {
+  let name = "";
+  try { name = new URL(rawUrl).pathname.toLowerCase(); } catch { return "unknown"; }
+  // Bilibili audio IDs (30216/30232/30280...) are authoritative. Some CDN
+  // nodes incorrectly return video/mp4 for every ISO-BMFF segment.
+  if (/302\d{2}\.m4s$/.test(name)) return "audio";
   const type = contentType.toLowerCase();
   if (type.startsWith("audio/")) return "audio";
   if (type.startsWith("video/")) return "video";
-  let name = "";
-  try { name = new URL(rawUrl).pathname.toLowerCase(); } catch { return "unknown"; }
-  if (/(?:^|[\/_-])audio(?:[\/_-]|\.|$)|302\d{2}\.m4s$/.test(name)) return "audio";
+  if (/(?:^|[\/_-])audio(?:[\/_-]|\.|$)/.test(name)) return "audio";
   if (/(?:^|[\/_-])video(?:[\/_-]|\.|$)|300\d{2}\.m4s$/.test(name)) return "video";
   return "unknown";
 }
@@ -521,6 +524,7 @@ const hlsChildPlaylistsByTab = new Map();
 const pendingM4sByTab = new Map();
 const pendingM4sTimers = new Map();
 const bilibiliDashMetadataByTab = new Map();
+const bilibiliSsrTabs = new Set();
 const pageUrlByTab = new Map();
 const tencentVideoTabs = new Set();
 const requestHeadersByUrl = new Map();
@@ -537,6 +541,7 @@ const METADATA_TIMEOUT_MS = 6000;
 // The HLS manifest normally arrives before its fMP4 fragments. A short grace
 // period only covers request-event reordering without delaying DASH discovery.
 const M4S_CLASSIFY_DELAY_MS = 250;
+const BILIBILI_M4S_SETTLE_DELAY_MS = 900;
 let enabled = false;
 
 async function readDetectionPreference() {
@@ -662,6 +667,7 @@ async function hydrateTab(tabId) {
   const live = byTab.get(tabId);
   byTab.set(tabId, new Map([...entries, ...(live ? live.entries() : [])]));
   reconcileHlsSegments(tabId);
+  reconcileBilibiliDashTracks(tabId);
   hydratedTabs.add(tabId);
   return storeFor(tabId);
 }
@@ -697,6 +703,10 @@ function requestPageOrigin(details) {
 
 function isTencentVideoPage(rawUrl) {
   try { return /(?:^|\.)v\.qq\.com$/i.test(new URL(rawUrl).hostname); } catch { return false; }
+}
+
+function isBilibiliPage(rawUrl) {
+  try { return /(?:^|\.)bilibili\.com$/i.test(new URL(rawUrl).hostname); } catch { return false; }
 }
 
 async function resolveWorkerTab(details) {
@@ -746,6 +756,7 @@ function resetTab(tabId) {
   hlsChildPlaylistsByTab.delete(tabId);
   clearPendingM4s(tabId);
   bilibiliDashMetadataByTab.delete(tabId);
+  bilibiliSsrTabs.delete(tabId);
   dlnaSeekStateByTab.delete(tabId);
   updateTabBadge(tabId);
 }
@@ -755,6 +766,7 @@ function resetAllTabs() {
   pendingM4sTimers.clear();
   pendingM4sByTab.clear();
   bilibiliDashMetadataByTab.clear();
+  bilibiliSsrTabs.clear();
   hlsTabs.clear();
   hlsSegmentGroupsByTab.clear();
   hlsManifestChildGroupsByTab.clear();
@@ -773,7 +785,7 @@ function resetAllTabs() {
   autoCastDeviceByTab.clear();
 }
 
-function commitCandidate(tabId, url, contentType, source, kind, requestHeaders = {}) {
+function commitCandidate(tabId, url, contentType, source, kind, requestHeaders = {}, deferEffects = false) {
   const store = storeFor(tabId);
   const youkuVid = youkuVideoId(url);
   if (youkuVid && kind !== "m3u8" && store.has(`youku:${youkuVid}`)) return;
@@ -816,6 +828,7 @@ function commitCandidate(tabId, url, contentType, source, kind, requestHeaders =
     mediaTrack: kind === "m4s" ? inferM4sTrack(url, contentType) : kind === "youtube" ? inferYouTubeTrack(url) : null,
     resolution: dashMetadata ? { width: dashMetadata.width, height: dashMetadata.height } : null,
     qualityId: dashMetadata?.qualityId ?? null,
+    qualityLabel: dashMetadata?.qualityLabel ?? null,
     frameRate: dashMetadata?.frameRate ?? null,
     codecs: dashMetadata?.codecs ?? null,
     // DASH/M4S on protected sites is validated with a small native Range
@@ -826,8 +839,10 @@ function commitCandidate(tabId, url, contentType, source, kind, requestHeaders =
   };
   store.set(key, item);
   while (store.size > MAX_ITEMS) store.delete(store.keys().next().value);
-  updateTabBadge(tabId);
-  maybeAutoCast(tabId, item);
+  if (!deferEffects) {
+    updateTabBadge(tabId);
+    maybeAutoCast(tabId, item);
+  }
 }
 
 function maybeAutoCast(tabId, item) {
@@ -857,8 +872,47 @@ function flushPendingM4s(tabId) {
   pendingM4sByTab.delete(tabId);
   if (!enabled || hlsTabs.has(tabId) || !pending) return;
   for (const candidate of pending.values()) {
-    commitCandidate(tabId, candidate.url, candidate.contentType, candidate.source, "m4s");
+    commitCandidate(tabId, candidate.url, candidate.contentType, candidate.source, "m4s", {}, true);
   }
+  reconcileBilibiliDashTracks(tabId);
+  const isBilibili = isBilibiliPage(pageUrlByTab.get(tabId)) || [...pending.values()].some((candidate) => {
+    try { return /(?:^|\.)bilivideo\.(?:com|cn)$/i.test(new URL(candidate.url).hostname); } catch { return false; }
+  });
+  if (isBilibili) {
+    for (const item of storeFor(tabId).values()) {
+      if (item.kind === "m4s") item.status = "ready";
+    }
+  }
+  updateTabBadge(tabId);
+  void persistTab(tabId);
+}
+
+function reconcileBilibiliDashTracks(tabId) {
+  const store = storeFor(tabId);
+  const items = [...store.values()].filter((item) => item.kind === "m4s");
+  const belongsToBilibili = isBilibiliPage(pageUrlByTab.get(tabId))
+    || items.some((item) => { try { return /(?:^|\.)bilivideo\.com$/i.test(new URL(item.url).hostname); } catch { return false; } });
+  if (!belongsToBilibili) return;
+  const videos = items.filter((item) => item.mediaTrack === "video");
+  const audios = items.filter((item) => item.mediaTrack === "audio");
+  if (!videos.length || !audios.length) return;
+  const audioRank = (item) => {
+    const match = item.url.match(/-1-(30280|30232|30216)\.m4s/i);
+    return match?.[1] === "30280" ? 3 : match?.[1] === "30232" ? 2 : match?.[1] === "30216" ? 1 : 0;
+  };
+  const audio = audios.sort((a, b) => Number(b.bandwidth || 0) - Number(a.bandwidth || 0)
+    || audioRank(b) - audioRank(a) || b.detectedAt - a.detectedAt)[0];
+  for (const video of videos) {
+    video.audioUrl = audio.url;
+    video.audioQualityId = audio.qualityId ?? null;
+    video.audioCodecs = audio.codecs ?? null;
+    video.audioBackupUrls = Array.isArray(audio.backupUrls) ? audio.backupUrls : [];
+    video.requestHeaders = { ...audio.requestHeaders, ...video.requestHeaders };
+  }
+  for (const [key, item] of store) {
+    if (item.kind === "m4s" && item.mediaTrack === "audio") store.delete(key);
+  }
+  updateTabBadge(tabId);
 }
 
 function queueM4s(tabId, url, contentType, source) {
@@ -873,8 +927,14 @@ function queueM4s(tabId, url, contentType, source) {
     contentType: contentType || previous?.contentType || "",
     source: previous?.source ?? source
   });
-  if (!pendingM4sTimers.has(tabId)) {
-    pendingM4sTimers.set(tabId, setTimeout(() => flushPendingM4s(tabId), M4S_CLASSIFY_DELAY_MS));
+  const isBilibili = isBilibiliPage(pageUrlByTab.get(tabId)) || (() => {
+    try { return /(?:^|\.)bilivideo\.(?:com|cn)$/i.test(new URL(url).hostname); } catch { return false; }
+  })();
+  const existingTimer = pendingM4sTimers.get(tabId);
+  if (isBilibili && existingTimer != null) clearTimeout(existingTimer);
+  if (isBilibili || existingTimer == null) {
+    const delay = isBilibili ? BILIBILI_M4S_SETTLE_DELAY_MS : M4S_CLASSIFY_DELAY_MS;
+    pendingM4sTimers.set(tabId, setTimeout(() => flushPendingM4s(tabId), delay));
   }
 }
 
@@ -910,6 +970,9 @@ function addCandidate(tabId, url, contentType = "", source = "network", requestH
     return;
   }
   if (kind === "m4s") {
+    // playurlSSRData is authoritative on Bilibili. Once available, ignore
+    // request-level M4S discoveries so the popup only contains logical pairs.
+    if (bilibiliSsrTabs.has(tabId)) return;
     if (hlsManifestChildGroupsByTab.get(tabId)?.has(streamGroupKey(url)) || hlsMediaRootsByTab.get(tabId)?.has(mediaRootKey(url))) return;
     if (!hlsTabs.has(tabId)) queueM4s(tabId, url, contentType, source);
     return;
@@ -1028,7 +1091,9 @@ async function enrich(tabId, item) {
     item.status = "ready";
   } catch (error) {
     item.status = "error";
-    item.error = error?.name === "AbortError" ? "元数据读取超时" : error?.message ?? String(error);
+    const errorName = error && error.name;
+    const errorMessage = error && error.message;
+    item.error = errorName === "AbortError" ? "元数据读取超时" : (errorMessage || String(error));
   } finally {
     clearTimeout(timeout);
     delete item.loadingStartedAt;
@@ -1038,7 +1103,7 @@ async function enrich(tabId, item) {
 async function nativeDlna(message) {
   if (!api.runtime.sendNativeMessage) throw new Error("当前浏览器没有可用的 DLNA 原生桥接");
   const response = await api.runtime.sendNativeMessage(NATIVE_APP_ID, { scope: "dlna", ...message });
-  if (!response?.ok) throw new Error(response?.error || "DLNA 原生操作失败");
+  if (!response || !response.ok) throw new Error((response && response.error) || "DLNA 原生操作失败");
   return response;
 }
 
@@ -1100,11 +1165,11 @@ async function castDlna(message) {
   const tracksArePaired = pairedVideo && pairedAudio && Math.abs(pairedVideo.detectedAt - pairedAudio.detectedAt) <= 120_000;
   // DASH receivers expect video as CurrentURI and audio as CurrentAudioURI,
   // regardless of which track card the user clicked in the popup.
-  const playbackItem = tracksArePaired ? { ...pairedVideo, audioUrl: pairedAudio.url } : item;
+  const playbackItem = item.audioUrl ? item : tracksArePaired ? { ...pairedVideo, audioUrl: pairedAudio.url } : item;
   const pageUrl = pageUrlByTab.get(message.tabId);
   // A Bilibili DASH pair may expose authentication headers on either request.
   // Forward one canonical header set for both CurrentURI and CurrentAudioURI.
-  const pairedRequestHeaders = tracksArePaired ? {
+  const pairedRequestHeaders = !item.audioUrl && tracksArePaired ? {
     ...(pairedVideo.requestHeaders ?? {}),
     ...(pairedAudio.requestHeaders ?? {}),
     ...(item.requestHeaders ?? {})
@@ -1167,21 +1232,84 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message?.type === "BILIBILI_DASH_METADATA") {
     const tabId = sender.tab?.id ?? message.tabId;
     if (tabId == null || tabId < 0) { sendResponse({ ok: false }); return false; }
-    const metadata = new Map((Array.isArray(message.entries) ? message.entries : [])
-      .filter((entry) => entry?.key && Number(entry.width) > 0 && Number(entry.height) > 0)
+    const entries = (Array.isArray(message.entries) ? message.entries : [])
+      .filter((entry) => entry?.key);
+    const metadata = new Map(entries
       .map((entry) => [String(entry.key).toLowerCase(), entry]));
     bilibiliDashMetadataByTab.set(tabId, metadata);
+    if (message.source === "playurlSSRData") {
+      if (!bilibiliSsrTabs.has(tabId)) {
+        bilibiliSsrTabs.add(tabId);
+        clearPendingM4s(tabId);
+        for (const [key, item] of storeFor(tabId)) {
+          if (item.kind === "m4s") storeFor(tabId).delete(key);
+        }
+      }
+      const audio = entries.filter((entry) => entry.mediaTrack === "audio" && typeof entry.url === "string")
+        .sort((a, b) => Number(b.bandwidth || 0) - Number(a.bandwidth || 0))[0];
+      const codecRank = (entry) => /^avc1/i.test(entry.codecs || "") ? 0
+        : /^(?:hvc1|hev1)/i.test(entry.codecs || "") ? 1 : /^av01/i.test(entry.codecs || "") ? 2 : 3;
+      const videosByQuality = new Map();
+      for (const detail of entries.filter((entry) => entry.mediaTrack === "video" && typeof entry.url === "string")) {
+        const qualityKey = Number(detail.qualityId) || `${detail.width}x${detail.height}`;
+        const previous = videosByQuality.get(qualityKey);
+        if (!previous || codecRank(detail) < codecRank(previous)
+          || codecRank(detail) === codecRank(previous) && Number(detail.bandwidth || 0) > Number(previous.bandwidth || 0)) {
+          videosByQuality.set(qualityKey, detail);
+        }
+      }
+      const selectedVideos = [...videosByQuality.values()].sort((a, b) => Number(b.qualityId || 0) - Number(a.qualityId || 0));
+      if (!selectedVideos.length && audio) {
+        commitCandidate(tabId, audio.url, "audio/mp4", "bilibili-playurlSSRData", "m4s", {}, true);
+        const audioItem = storeFor(tabId).get(audio.url);
+        if (audioItem) {
+          audioItem.mediaTrack = "audio";
+          audioItem.status = "ready";
+          audioItem.duration = Number(message.duration) > 0 ? Number(message.duration) : null;
+          audioItem.qualityId = Number(audio.qualityId) || null;
+          audioItem.bandwidth = Number(audio.bandwidth) || null;
+          audioItem.size = Number(audio.size) || null;
+          audioItem.codecs = audio.codecs || null;
+          audioItem.backupUrls = Array.isArray(audio.backupUrls) ? audio.backupUrls : [];
+        }
+      }
+      for (const detail of selectedVideos) {
+        commitCandidate(tabId, detail.url, "video/mp4", "bilibili-playurlSSRData", "m4s", {}, true);
+        const item = storeFor(tabId).get(detail.url);
+        if (!item) continue;
+        item.mediaTrack = "video";
+        item.status = "ready";
+        item.audioUrl = audio?.url || null;
+        item.audioQualityId = Number(audio?.qualityId) || null;
+        item.audioCodecs = audio?.codecs || null;
+        item.duration = Number(message.duration) > 0 ? Number(message.duration) : null;
+        item.bandwidth = Number(detail.bandwidth) || null;
+        item.size = Number(detail.size) || null;
+        item.backupUrls = Array.isArray(detail.backupUrls) ? detail.backupUrls : [];
+        item.audioBackupUrls = Array.isArray(audio?.backupUrls) ? audio.backupUrls : [];
+        item.resolution = Number(detail.width) > 0 && Number(detail.height) > 0
+          ? { width: Number(detail.width), height: Number(detail.height) } : null;
+        item.qualityId = Number(detail.qualityId) || null;
+        item.qualityLabel = detail.qualityLabel || null;
+        item.frameRate = detail.frameRate ?? null;
+        item.codecs = detail.codecs ?? null;
+      }
+    }
     for (const item of storeFor(tabId).values()) {
       if (item.kind !== "m4s") continue;
       let key = "";
       try { key = decodeURIComponent(new URL(item.url).pathname.split("/").pop() ?? "").toLowerCase(); } catch { continue; }
       const detail = metadata.get(key);
       if (!detail) continue;
+      if (detail.mediaTrack === "audio" || detail.mediaTrack === "video") item.mediaTrack = detail.mediaTrack;
       item.resolution = { width: Number(detail.width), height: Number(detail.height) };
       item.qualityId = Number(detail.qualityId) || null;
+      item.qualityLabel = detail.qualityLabel || null;
       item.frameRate = detail.frameRate ?? null;
       item.codecs = detail.codecs ?? null;
     }
+    reconcileBilibiliDashTracks(tabId);
+    updateTabBadge(tabId);
     void persistTab(tabId);
     sendResponse({ ok: true });
     return false;

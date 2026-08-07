@@ -24,6 +24,7 @@ test("distinguishes Bilibili M4S video and audio tracks", () => {
   assert.equal(inferM4sTrack("https://xy.bilivideo.com/video.m4s?token=x"), "video");
   assert.equal(inferM4sTrack("https://xy.bilivideo.com/audio.m4s?token=x"), "audio");
   assert.equal(inferM4sTrack("https://xy.bilivideo.com/30280.m4s"), "audio");
+  assert.equal(inferM4sTrack("https://xy.bilivideo.com/upgcxcode/16/23/39212942316/39212942316-1-30280.m4s?token=x", "video/mp4"), "audio");
 });
 
 test("reads duration from FLV onMetaData script tag", () => {

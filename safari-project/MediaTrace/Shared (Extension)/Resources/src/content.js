@@ -2,6 +2,7 @@
   const api = globalThis.browser ?? globalThis.chrome;
   const seen = new Set();
   let dashScanTimer;
+  let lastBilibiliDashSignature = "";
   const remoteSeekUntil = new WeakMap();
   const webSeekTimers = new WeakMap();
 
@@ -9,21 +10,73 @@
     try { return decodeURIComponent(new URL(rawUrl, location.href).pathname.split("/").pop() ?? "").toLowerCase(); } catch { return ""; }
   }
 
-  function collectDashMetadata(value, results, visited = new Set()) {
+  function collectDashMetadata(value, results, visited = new Set(), trackHint = null) {
     if (!value || typeof value !== "object" || visited.has(value)) return;
     visited.add(value);
+    if (value.dash && typeof value.dash === "object") {
+      if (Array.isArray(value.dash.video)) {
+        for (const track of value.dash.video) collectDashMetadata(track, results, visited, "video");
+      }
+      if (Array.isArray(value.dash.audio)) {
+        for (const track of value.dash.audio) collectDashMetadata(track, results, visited, "audio");
+      }
+    }
     const mediaUrl = value.baseUrl ?? value.base_url;
     const width = Number(value.width); const height = Number(value.height);
     const key = typeof mediaUrl === "string" ? m4sFileKey(mediaUrl) : "";
-    if (key && /\.m4s$/i.test(key) && width > 0 && height > 0) {
-      results.set(key, { key, width, height, qualityId: Number(value.id) || null,
-        frameRate: value.frameRate ?? value.frame_rate ?? null, codecs: value.codecs ?? null });
+    if (key && /\.m4s$/i.test(key)) {
+      const mimeType = String(value.mimeType ?? value.mime_type ?? "").toLowerCase();
+      const codecs = String(value.codecs ?? "").toLowerCase();
+      const mediaTrack = trackHint ?? (mimeType.startsWith("audio/") || /^mp4a|^ec-3|^ac-3/.test(codecs)
+        || /302\d{2}\.m4s$/i.test(key) ? "audio" : "video");
+      results.set(key, { key, url: new URL(mediaUrl, location.href).href, mediaTrack, width, height,
+        qualityId: Number(value.id) || null, bandwidth: Number(value.bandwidth) || 0,
+        size: Number(value.size) || null,
+        backupUrls: (value.backupUrl ?? value.backup_url ?? []).filter?.((url) => typeof url === "string") ?? [],
+        frameRate: value.frameRate ?? value.frame_rate ?? null,
+        codecs: value.codecs ?? null, mimeType: value.mimeType ?? value.mime_type ?? null });
     }
-    for (const child of Object.values(value)) collectDashMetadata(child, results, visited);
+    for (const child of Object.values(value)) collectDashMetadata(child, results, visited, trackHint);
   }
 
-  function assignedJson(scriptText) {
-    const marker = scriptText.indexOf("__playinfo__");
+  function collectQualityLabels(value, labels, visited = new Set()) {
+    if (!value || typeof value !== "object" || visited.has(value)) return;
+    visited.add(value);
+    const qualities = value.accept_quality;
+    const descriptions = value.accept_description;
+    if (Array.isArray(qualities) && Array.isArray(descriptions)) {
+      qualities.forEach((quality, index) => {
+        const id = Number(quality); const label = descriptions[index];
+        if (Number.isFinite(id) && typeof label === "string" && label.trim() && !labels.has(id)) labels.set(id, label.trim());
+      });
+    }
+    if (Array.isArray(value.support_formats)) {
+      for (const format of value.support_formats) {
+        const id = Number(format?.quality);
+        const label = format?.new_description ?? format?.description ?? format?.display_desc;
+        if (Number.isFinite(id) && typeof label === "string" && label.trim() && !labels.has(id)) labels.set(id, label.trim());
+      }
+    }
+    for (const child of Object.values(value)) collectQualityLabels(child, labels, visited);
+  }
+
+  function findDashDuration(value, visited = new Set()) {
+    if (!value || typeof value !== "object" || visited.has(value)) return null;
+    visited.add(value);
+    if (value.dash && Array.isArray(value.dash.video) && Array.isArray(value.dash.audio)) {
+      const duration = Number(value.dash.duration);
+      if (Number.isFinite(duration) && duration > 0) return duration;
+    }
+    for (const child of Object.values(value)) {
+      const duration = findDashDuration(child, visited);
+      if (duration) return duration;
+    }
+    return null;
+  }
+
+  function assignedJson(scriptText, variableName = "__playinfo__") {
+    const marker = scriptText.indexOf(variableName);
+    if (marker < 0) return null;
     const start = scriptText.indexOf("{", marker >= 0 ? marker : 0);
     if (start < 0) return null;
     let depth = 0; let quoted = false; let escaped = false;
@@ -45,16 +98,35 @@
   function scanBilibiliDashMetadata() {
     if (!/(?:^|\.)bilibili\.com$/i.test(location.hostname)) return;
     const results = new Map();
+    const qualityLabels = new Map();
+    let dashDuration = null;
+    let source = "traffic-fallback";
     for (const script of document.scripts) {
+      const text = script.textContent ?? "";
+      if (!text.includes("playurlSSRData")) continue;
+      const data = assignedJson(text, "playurlSSRData");
+      collectQualityLabels(data, qualityLabels);
+      collectDashMetadata(data, results);
+      dashDuration = dashDuration ?? findDashDuration(data);
+    }
+    if (results.size) source = "playurlSSRData";
+    for (const script of document.scripts) {
+      if (results.size) break;
       const text = script.textContent ?? "";
       if (!text.includes("baseUrl") && !text.includes("base_url")) continue;
       let data = null;
       try { data = script.type === "application/json" ? JSON.parse(text) : assignedJson(text); } catch { /* incomplete page JSON */ }
+      collectQualityLabels(data, qualityLabels);
       collectDashMetadata(data, results);
+      dashDuration = dashDuration ?? findDashDuration(data);
     }
     if (!results.size) return;
+    for (const entry of results.values()) entry.qualityLabel = qualityLabels.get(Number(entry.qualityId)) ?? null;
+    const signature = `${source}|${[...results.keys()].sort().join("|")}`;
+    if (signature === lastBilibiliDashSignature) return;
+    lastBilibiliDashSignature = signature;
     try {
-      const pending = api.runtime.sendMessage({ type: "BILIBILI_DASH_METADATA", entries: [...results.values()] });
+      const pending = api.runtime.sendMessage({ type: "BILIBILI_DASH_METADATA", source, duration: dashDuration, entries: [...results.values()] });
       if (pending?.catch) pending.catch(() => {});
     } catch { /* extension context may have been invalidated */ }
   }
@@ -102,6 +174,7 @@
       if (location.href === currentUrl) return;
       currentUrl = location.href;
       seen.clear();
+      lastBilibiliDashSignature = "";
       scheduleBilibiliDashScan();
       try {
         const pending = api.runtime.sendMessage({ type: "PAGE_NAVIGATED", url: currentUrl });

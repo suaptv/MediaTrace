@@ -1,6 +1,6 @@
 {
   "name": "mediatrace-extension",
-  "version": "1.0.5",
+  "version": "1.0.15",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,6 +8,7 @@
     "build:chromium-background": "node ./scripts/prepare-chromium-background.mjs",
     "build:chrome": "./scripts/build-chrome-crx.sh",
     "build:edge": "./scripts/build-chrome-crx.sh",
+    "build:windows-installer": "powershell -ExecutionPolicy Bypass -File .\\scripts\\build-windows-installer.ps1",
     "install:chrome-host": "./scripts/install-chrome-native-host.sh",
     "install:edge-host": "./scripts/install-chrome-native-host.sh",
     "uninstall:chrome-host": "./scripts/uninstall-chrome-native-host.sh",

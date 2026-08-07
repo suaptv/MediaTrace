@@ -37,7 +37,7 @@ flowchart LR
 | iPhone / iPad Safari | iOS / iPadOS 15.4 或更高版本、Xcode |
 | macOS Chrome | Chrome；使用 DLNA 时还需要安装本地服务 |
 | macOS Microsoft Edge | Edge；使用 DLNA 时还需要安装同一个本地服务 |
-| Windows Chrome / Edge | Windows 10/11；媒体检测可直接使用，DLNA 需要 .NET 8 SDK 和 Windows Native Host |
+| Windows Chrome / Edge | Windows 10 1809 或更高版本（推荐 Windows 11）；普通用户使用 Setup 安装包不需要 Visual Studio 或 .NET SDK |
 
 > **Safari 安装必须签名：** macOS、iOS 和 iPadOS 版本都由宿主 App 与 Safari Extension 组成。两个 Target 必须选择同一个有效 Apple Developer Team，并成功签名后，系统才会安装和显示扩展。仅完成编译但没有有效签名时，Safari 设置中可能完全看不到 MediaTrace。
 
@@ -169,8 +169,64 @@ codesign --verify --deep --strict --verbose=2 \
 
 ### Windows Chrome / Edge 安装
 
+#### 普通用户：使用一键安装包（推荐）
+
+从项目 Releases 下载与电脑架构对应的安装程序：
+
+- 大多数 Intel / AMD 电脑：`MediaTrace-Setup-版本-x64.exe`；
+- Windows on Arm 电脑：`MediaTrace-Setup-版本-arm64.exe`。
+
+双击安装程序后，它会自动完成：
+
+- 安装预编译、自包含的 Windows Native Host；
+- 生成稳定扩展 ID；
+- 注册本机已经安装的 Chrome 和 Microsoft Edge；
+- 部署扩展文件并打开浏览器扩展管理页；
+- 打开需要加载的 `Extension` 文件夹。
+
+普通用户**不需要安装 Visual Studio、Visual Studio Build Tools、.NET SDK 或 Node.js**。
+
+由于 Chrome/Edge 的安全策略，未上架浏览器商店的扩展不能被第三方 EXE 静默启用。安装结束后只需完成一次浏览器操作：
+
+1. 在自动打开的扩展管理页开启“开发者模式”；
+2. 点击“加载已解压的扩展程序”；
+3. 选择安装程序已经打开的 `Extension` 文件夹；
+4. 完全退出并重新打开浏览器。
+
+若 Windows 防火墙询问网络访问，请允许专用网络，否则可能收不到 SSDP/DLNA 设备响应。
+
+#### Windows 编译环境与最低版本
+
+以下工具只供**项目维护者自行制作 Setup 安装包**使用，普通用户不需要：
+
+- 最低系统：Windows 10 版本 1809（64 位）或 Windows 11；
+- 最低 PowerShell：Windows PowerShell 5.1；
+- 必需编译环境：[.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) 8.0.100 或更高版本，注意必须安装 **SDK**，仅安装 `.NET Runtime` 不够；
+- Visual Studio **不是必需项**：安装脚本直接使用 `dotnet publish` 编译 Native Host；
+- 如果希望在 Visual Studio 中打开和编译项目，最低使用 **Visual Studio 2022 17.8**，并安装“.NET 桌面开发”工作负载或单独安装 .NET 8 SDK；
+- Visual Studio Build Tools 也不是运行安装脚本的必要条件。若已经安装 Build Tools，仍需确保命令行能够执行 `dotnet --version` 并显示 `8.0.100` 或更高版本。
+- 制作 `MediaTrace-Setup.exe` 还需要 Node.js 18+ 与 Inno Setup 6.3+。
+
+维护者生成安装包：
+
+```powershell
+.\scripts\build-windows-installer.ps1 -Architecture x64
+.\scripts\build-windows-installer.ps1 -Architecture arm64
+```
+
+生成结果位于 `dist\windows\`。也可以在 GitHub Actions 中手动运行 **Build Windows Installers**，或推送 `v*` 标签自动生成两个架构的安装包。
+
+在 PowerShell 中确认环境：
+
+```powershell
+dotnet --version
+$PSVersionTable.PSVersion
+```
+
+如果 `dotnet` 命令不存在，或者只安装了 Runtime，请先安装 x64 或 Arm64 架构对应的 .NET 8 SDK，然后重新打开 PowerShell。
+
 1. 仅使用媒体检测和复制地址时，直接在 `chrome://extensions` 或 `edge://extensions` 加载项目根目录即可；
-2. 如需 DLNA 搜索、投屏、进度同步和快进同步，先安装 [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)；
+2. 如需 DLNA 搜索、投屏、进度同步和快进同步，先安装上述 .NET 8 SDK；
 3. 在项目目录打开 PowerShell，执行：
 
 ```powershell

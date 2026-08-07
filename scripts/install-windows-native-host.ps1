@@ -48,7 +48,12 @@ if ($NativeId -notmatch '^[a-z0-9_]+(?:\.[a-z0-9_]+)+$' -or $NativeId.EndsWith('
   throw "Invalid Native Host Identifier: $NativeId"
 }
 if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
-  throw "The .NET 8 SDK is required. Install it from https://dotnet.microsoft.com/download/dotnet/8.0 and retry."
+  throw "The .NET 8 SDK 8.0.100 or later is required (the Runtime alone is not enough). Install it from https://dotnet.microsoft.com/download/dotnet/8.0, reopen PowerShell, and retry. Visual Studio is not required."
+}
+$DotnetVersionText = (& dotnet --version | Select-Object -Last 1).Trim()
+$DotnetVersion = $null
+if (-not [Version]::TryParse(($DotnetVersionText -replace '-.*$', ''), [ref]$DotnetVersion) -or $DotnetVersion.Major -lt 8) {
+  throw "Unsupported .NET SDK version: $DotnetVersionText. Install .NET 8 SDK 8.0.100 or later and retry."
 }
 
 $Source = Get-Content $BackgroundFile -Raw

@@ -210,10 +210,12 @@ main::-webkit-scrollbar-thumb:hover {
 .duration { font: 600 14px ui-monospace, SFMono-Regular, monospace; }
 .domain { display: block; margin-top: 11px; overflow: hidden; font-size: 14px; text-overflow: ellipsis; }
 .url { margin: 4px 0 12px; overflow: hidden; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
-.meta { padding-top: 10px; border-top: 1px solid var(--line); }
-.status { max-width: 245px; overflow: hidden; color: var(--subtle); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
-.copy, .cast { font-size: 11px; }
-.row-actions { display: flex; gap: 6px; }
+.meta { gap: 8px; padding-top: 10px; border-top: 1px solid var(--line); }
+.status { min-width: 0; overflow: hidden; flex: 1 1 auto; color: var(--subtle); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.copy, .cast { flex: 0 0 auto; font-size: 11px; white-space: nowrap; }
+.cast { min-width: 46px; }
+.copy { min-width: 68px; }
+.row-actions { display: flex; flex: 0 0 auto; gap: 6px; }
 .empty { padding: 70px 20px; color: var(--muted); text-align: center; }
 .empty small { color: var(--subtle); }
 .empty.compact { padding: 36px 18px; }

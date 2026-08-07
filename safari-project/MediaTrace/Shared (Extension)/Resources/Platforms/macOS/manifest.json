@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "MediaTrace",
-  "version": "1.0.3",
+  "version": "1.0.15",
   "description": "发现当前网页中的 M3U8 与 MP4 地址，并读取媒体时长。",
   "icons": {
     "16": "assets/icons/icon-16.png",
