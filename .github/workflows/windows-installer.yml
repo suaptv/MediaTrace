@@ -1,0 +1,52 @@
+name: Build Windows Installers
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    name: Build ${{ matrix.architecture }}
+    runs-on: windows-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        architecture:
+          - x64
+          - arm64
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Install Inno Setup
+        shell: powershell
+        run: |
+          choco install innosetup --no-progress -y
+
+      - name: Build MediaTrace installer
+        shell: powershell
+        run: |
+          .\scripts\build-windows-installer.ps1 `
+            -Architecture "${{ matrix.architecture }}"
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: MediaTrace-Windows-${{ matrix.architecture }}
+          path: dist/windows/MediaTrace-Setup-*.exe
+          if-no-files-found: error
+          retention-days: 30
