@@ -6,9 +6,16 @@ on:
     tags:
       - "v*"
 
+permissions:
+  contents: write
+
+concurrency:
+  group: windows-installer-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build:
-    name: Build ${{ matrix.architecture }}
+    name: Build Windows ${{ matrix.architecture }}
     runs-on: windows-latest
 
     strategy:
@@ -37,16 +44,109 @@ jobs:
         run: |
           choco install innosetup --no-progress -y
 
-      - name: Build MediaTrace installer
+      - name: Verify project files
+        shell: powershell
+        run: |
+          $RequiredFiles = @(
+            ".\scripts\build-windows-installer.ps1",
+            ".\scripts\register-windows-installer.ps1",
+            ".\installer\windows\MediaTrace.iss",
+            ".\native-host-windows\MediaTrace.NativeHost.csproj",
+            ".\native-host-windows\Program.cs",
+            ".\manifest.json",
+            ".\package.json"
+          )
+
+          foreach ($File in $RequiredFiles) {
+            if (-not (Test-Path $File)) {
+              throw "Required file is missing: $File"
+            }
+          }
+
+      - name: Run tests
+        shell: powershell
+        run: |
+          npm test
+
+      - name: Build Windows installer
         shell: powershell
         run: |
           .\scripts\build-windows-installer.ps1 `
             -Architecture "${{ matrix.architecture }}"
 
-      - name: Upload installer
+      - name: Verify installer output
+        shell: powershell
+        run: |
+          $Installers = @(
+            Get-ChildItem ".\dist\windows\MediaTrace-Setup-*.exe" `
+              -ErrorAction SilentlyContinue
+          )
+
+          if (-not $Installers.Count) {
+            throw "Windows installer was not generated."
+          }
+
+          foreach ($Installer in $Installers) {
+            Write-Host "Generated: $($Installer.FullName)"
+            Write-Host "Size: $($Installer.Length) bytes"
+          }
+
+      - name: Upload installer artifact
         uses: actions/upload-artifact@v4
         with:
           name: MediaTrace-Windows-${{ matrix.architecture }}
           path: dist/windows/MediaTrace-Setup-*.exe
           if-no-files-found: error
           retention-days: 30
+
+  release:
+    name: Publish GitHub Release assets
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: windows-latest
+
+    steps:
+      - name: Download x64 and Arm64 installers
+        uses: actions/download-artifact@v4
+        with:
+          pattern: MediaTrace-Windows-*
+          path: release-assets
+          merge-multiple: true
+
+      - name: Show release files
+        shell: powershell
+        run: |
+          Get-ChildItem ".\release-assets" -Recurse
+
+      - name: Create or update GitHub Release
+        shell: powershell
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $Tag = "${{ github.ref_name }}"
+
+          gh release view $Tag 2>$null
+
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $Tag `
+              --title "MediaTrace $Tag for Windows" `
+              --generate-notes
+          }
+
+          $Installers = @(
+            Get-ChildItem ".\release-assets\MediaTrace-Setup-*.exe" `
+              -ErrorAction SilentlyContinue
+          )
+
+          if (-not $Installers.Count) {
+            throw "No installer files were downloaded."
+          }
+
+          foreach ($Installer in $Installers) {
+            gh release upload $Tag $Installer.FullName --clobber
+
+            if ($LASTEXITCODE -ne 0) {
+              throw "Failed to upload: $($Installer.FullName)"
+            }
+          }
+
