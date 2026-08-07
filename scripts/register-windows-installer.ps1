@@ -2,6 +2,7 @@ param(
   [Parameter(Mandatory = $true)][string]$InstallRoot,
   [string]$NativeId = "app.mediatrace",
   [switch]$Uninstall,
+  [switch]$RemoveIdentity,
   [switch]$OpenExtensions
 )
 
@@ -15,10 +16,30 @@ $RegistryPaths = @(
 )
 
 if ($Uninstall) {
+  Get-Process -Name "mediatrace-native-host" -ErrorAction SilentlyContinue |
+    Stop-Process -Force -ErrorAction SilentlyContinue
   foreach ($RegistryPath in $RegistryPaths) {
     if (Test-Path $RegistryPath) { Remove-Item $RegistryPath -Recurse -Force }
   }
-  if (Test-Path $NativeManifestPath) { Remove-Item $NativeManifestPath -Force }
+  foreach ($BrowserRoot in @(
+    "HKCU:\Software\Google\Chrome\NativeMessagingHosts",
+    "HKCU:\Software\Microsoft\Edge\NativeMessagingHosts"
+  )) {
+    if (-not (Test-Path $BrowserRoot)) { continue }
+    foreach ($Registration in Get-ChildItem $BrowserRoot -ErrorAction SilentlyContinue) {
+      $RegisteredManifest = [string](Get-Item $Registration.PSPath).GetValue("")
+      if ($RegisteredManifest -and $RegisteredManifest.StartsWith($RegistrationDir, [StringComparison]::OrdinalIgnoreCase)) {
+        Remove-Item $Registration.PSPath -Recurse -Force
+      }
+    }
+  }
+  if (Test-Path $RegistrationDir) { Remove-Item $RegistrationDir -Recurse -Force }
+  if ($RemoveIdentity -and (Test-Path $IdentityKey)) { Remove-Item $IdentityKey -Force }
+  $MediaTraceDataDir = Split-Path -Parent $RegistrationDir
+  if (Test-Path $MediaTraceDataDir) {
+    $RemainingDataFiles = @(Get-ChildItem $MediaTraceDataDir -Force -ErrorAction SilentlyContinue)
+    if (-not $RemainingDataFiles.Count) { Remove-Item $MediaTraceDataDir -Force }
+  }
   exit 0
 }
 
@@ -85,4 +106,3 @@ if ($OpenExtensions) {
   }
   Start-Process -FilePath "explorer.exe" -ArgumentList "`"$ExtensionDir`""
 }
-

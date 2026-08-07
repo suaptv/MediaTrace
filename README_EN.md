@@ -249,6 +249,18 @@ On the first run, the installer adds a stable public key to `manifest.json`. If 
 .\scripts\uninstall-windows-native-host.ps1
 ```
 
+This stops any remaining Native Host process, removes Chrome/Edge registrations pointing into the MediaTrace directory (including older custom Host IDs), and deletes `%LOCALAPPDATA%\MediaTrace\NativeHost`. The `mediatrace.pem` identity key is preserved by default so a reinstall keeps the same extension ID.
+
+To permanently remove the identity key as well:
+
+```powershell
+.\scripts\uninstall-windows-native-host.ps1 -RemoveIdentity
+```
+
+For a version installed with `MediaTrace-Setup.exe`, prefer **Windows Settings → Apps → MediaTrace → Uninstall** so the Setup uninstaller can remove the complete installation directory.
+
+The Setup uninstaller removes the installation directory, Native Host, Chrome/Edge Native Messaging registrations, manifest, and `mediatrace.pem` identity key. Browsers do not permit a third-party uninstaller to alter extension settings, so remove the MediaTrace extension card manually from `chrome://extensions` or `edge://extensions` afterward.
+
 The Windows host supports SSDP, DLNA casting, custom request headers, TV position reads, and `REL_TIME` seeking. AirPlay `.local` discovery remains Apple-only.
 
 ## Installing on Safari

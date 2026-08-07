@@ -255,6 +255,18 @@ powershell -ExecutionPolicy Bypass -File .\scripts\install-windows-native-host.p
 .\scripts\uninstall-windows-native-host.ps1
 ```
 
+该脚本会停止残留的 Native Host进程，清除 Chrome/Edge 中所有指向 MediaTrace目录的旧注册项（包括以前使用过的自定义 Host ID），并删除 `%LOCALAPPDATA%\MediaTrace\NativeHost`。默认保留 `mediatrace.pem`，因此重新安装时扩展ID不会改变。
+
+确定永久停用并同时删除身份私钥时执行：
+
+```powershell
+.\scripts\uninstall-windows-native-host.ps1 -RemoveIdentity
+```
+
+使用 `MediaTrace-Setup.exe` 安装的版本，应优先通过“Windows 设置 → 应用 → MediaTrace → 卸载”，由 Setup卸载程序清理完整安装目录。
+
+Setup卸载程序会删除安装目录、Native Host、Chrome/Edge Native Messaging注册、清单和 `mediatrace.pem` 身份密钥。浏览器不允许第三方卸载程序直接修改扩展配置，因此卸载后仍需在 `chrome://extensions` 或 `edge://extensions` 中手动移除 MediaTrace扩展卡片。
+
 Windows 版本支持 SSDP、DLNA 投屏、自定义请求头、电视进度读取和 `REL_TIME` 快进。AirPlay `.local` 地址发现仅在 Apple 平台提供。
 
 ## Safari 安装

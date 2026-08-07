@@ -52,7 +52,7 @@ Name: "{group}\MediaTrace 使用说明"; Filename: "{app}\README.md"
 Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\Tools\register-windows-installer.ps1"" -InstallRoot ""{app}"" -OpenExtensions"; StatusMsg: "正在注册 Chrome / Edge Native Host…"; Flags: waituntilterminated
 
 [UninstallRun]
-Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\Tools\register-windows-installer.ps1"" -InstallRoot ""{app}"" -Uninstall"; Flags: runhidden waituntilterminated
+Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\Tools\register-windows-installer.ps1"" -InstallRoot ""{app}"" -Uninstall -RemoveIdentity"; Flags: runhidden waituntilterminated
 
 [Code]
 procedure CurStepChanged(CurStep: TSetupStep);
@@ -61,4 +61,12 @@ begin
     MsgBox('MediaTrace 已安装。' + #13#10 + #13#10 +
       '浏览器安全策略不允许商店外扩展被安装程序静默启用。安装程序会打开扩展管理页和 Extension 文件夹，请开启开发者模式并点击“加载已解压的扩展程序”。' + #13#10 + #13#10 +
       '普通用户不需要安装 Visual Studio 或 .NET SDK。', mbInformation, MB_OK);
+end;
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+begin
+  if CurUninstallStep = usPostUninstall then
+    MsgBox('MediaTrace 的安装文件、Native Host、注册表和身份密钥已经删除。' + #13#10 + #13#10 +
+      'Chrome/Edge 不允许卸载器修改浏览器配置。请在 chrome://extensions 或 edge://extensions 中手动移除 MediaTrace 扩展卡片。',
+      mbInformation, MB_OK);
 end;
